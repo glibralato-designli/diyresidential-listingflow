@@ -23,9 +23,9 @@ function workingScreenMarkup({ eyebrow, title, description, whyLine, bodyHtml })
       <div class="main-split-container">
         <div class="screen-text-block">
           <div class="eyebrow">${eyebrow}</div>
-          <p class="h2">${title}</p>
-          ${description ? `<p class="p-reg text-muted" style="margin-top:8px">${description}</p>` : ''}
-          ${whyLine ? `<p class="why-line" style="margin-top:8px">${whyLine}</p>` : ''}
+          <p class="screen-title">${title}</p>
+          ${description ? `<p class="screen-description">${description}</p>` : ''}
+          ${whyLine ? `<p class="screen-description">${whyLine}</p>` : ''}
         </div>
         <div class="living-card-band">${renderLivingCard({ band: true })}</div>
         <div class="split-zones">
@@ -67,6 +67,60 @@ registerScreen('A1.0', {
 });
 
 /* ---------------- A1.1 — Address ---------------- */
+
+/* Agent representation — each answer opens its own follow-up question
+   (reference screens, Figma section 6647:109132). */
+const AGENT_OPTIONS = [
+  { val: 'no', label: 'No' },
+  { val: 'yes', label: 'Yes' },
+  { val: 'is-agent', label: 'I am a Real Estate Agent' }
+];
+
+const AGENT_FOLLOW_UPS = {
+  'no': {
+    question: 'Have you previously worked with a real estate agent for this property?',
+    options: ['No', 'Yes, but I am no longer working with them', 'Yes, and I am still working with them']
+  },
+  'yes': {
+    question: 'Are you currently under an active agreement with a real estate agent?',
+    options: ['Yes', 'No', "I'm not sure"]
+  },
+  'is-agent': {
+    question: 'Are you a licensed real estate agent?',
+    options: ['Yes', 'No']
+  }
+};
+
+function radioListMarkup(name, options, value) {
+  return `
+    <div class="radio-list" role="radiogroup" data-radio-list="${name}">
+      ${options.map(o => {
+        const val = typeof o === 'string' ? o : o.val;
+        const label = typeof o === 'string' ? o : o.label;
+        const selected = value === val;
+        return `
+          <button type="button" class="radio-row ${selected ? 'selected' : ''}" role="radio" aria-checked="${selected}" data-val="${val}">
+            <span class="radio-dot"></span>
+            <span>${label}</span>
+          </button>`;
+      }).join('')}
+    </div>`;
+}
+
+function agentQuestionMarkup() {
+  const rep = listing.representedByAgent;
+  const followUp = AGENT_FOLLOW_UPS[rep];
+  return `
+    <div class="field">
+      <label>Are you currently represented by a real estate agent? <span class="field-optional">(Optional)</span></label>
+      ${radioListMarkup('agent', AGENT_OPTIONS, rep)}
+    </div>
+    ${followUp ? `
+      <div class="field">
+        <label>${followUp.question}</label>
+        ${radioListMarkup('agent-follow-up', followUp.options, listing.agentFollowUp[rep])}
+      </div>` : ''}`;
+}
 
 const ADDRESS_SUGGESTIONS = [
   { line1: '123 Maple Street', city: 'Nashville', state: 'TN', zip: '37201', hasRecords: true },
@@ -125,19 +179,12 @@ function renderA11(root) {
       </div>
       ${prefillBox()}
     ` : ''}
-    <div class="field">
-      <label>Are you currently represented by a real estate agent?</label>
-      <div class="segmented" id="agent-segmented">
-        <button data-val="no" class="${listing.representedByAgent === 'no' ? 'active' : ''}">No</button>
-        <button data-val="yes" class="${listing.representedByAgent === 'yes' ? 'active' : ''}">Yes</button>
-        <button data-val="is-agent" class="${listing.representedByAgent === 'is-agent' ? 'active' : ''}">I am a Real Estate Agent</button>
-      </div>
-    </div>
+    ${agentQuestionMarkup()}
     <div class="field-reaction helper">${icon('circle-help')} We'll ask for proof of ownership later, just before signing.</div>
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 1 of 11 · Address',
+    eyebrow: 'Step 1 of 11 - Address',
     title: "What's the property address?",
     description: "We'll pull in what public records already know, so you don't have to type it twice.",
     bodyHtml: body
@@ -186,9 +233,16 @@ function renderA11(root) {
     renderApp();
   });
 
-  root.querySelectorAll('#agent-segmented button').forEach(btn => {
+  root.querySelectorAll('[data-radio-list="agent"] button').forEach(btn => {
     btn.addEventListener('click', () => {
       listing.representedByAgent = btn.dataset.val;
+      saveListing();
+      renderApp();
+    });
+  });
+  root.querySelectorAll('[data-radio-list="agent-follow-up"] button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      listing.agentFollowUp[listing.representedByAgent] = btn.dataset.val;
       saveListing();
       renderApp();
     });
@@ -219,7 +273,7 @@ function seedBasicsFromPrefill() {
 function stepperMarkup(fieldKey, label, value) {
   return `
     <div class="stepper" data-stepper="${fieldKey}">
-      <span class="p-sm font-semibold">${label}</span>
+      <span class="stepper-label">${label}</span>
       <div class="stepper-controls">
         <button class="stepper-btn" data-action="dec" aria-label="Decrease">${icon('minus', 20)}</button>
         <span class="stepper-value">${value}</span>
@@ -256,7 +310,7 @@ function renderA12(root) {
   const wasPrefilled = (key) => !listing.address.prefill.none && listing.address.prefill[key] !== undefined;
 
   const fieldLabel = (text, key) => wasPrefilled(key)
-    ? `<span class="found-row"><span>${text}</span><span class="found-row-leader"></span><span class="found-row-tag">(Found)</span></span>`
+    ? `<span class="label-row"><span>${text}</span><span class="badge-found">Found</span></span>`
     : text;
 
   const propertyTypeLabel = PROPERTY_TYPES.find(t => t.id === listing.propertyType)?.label
@@ -282,17 +336,17 @@ function renderA12(root) {
       </div>
       <div class="field">
         <label>${fieldLabel('Lot size', 'lotSize')}</label>
-        <div style="display:flex; gap:8px;">
-          <input type="number" id="f-lotSize" value="${b.lotSize ?? ''}" style="flex:1" />
+        <div class="input-with-toggle">
+          <input type="number" id="f-lotSize" value="${b.lotSize ?? ''}" />
           <div class="segmented" id="lot-unit-segmented">
             <button data-val="sqft" class="${b.lotUnit === 'sqft' ? 'active' : ''}">Sq Ft</button>
             <button data-val="acre" class="${b.lotUnit === 'acre' ? 'active' : ''}">Acre</button>
           </div>
         </div>
-        <label style="display:flex; align-items:center; gap:6px; font-weight:400; margin-top:4px;">
+        <label class="checkbox-row">
           <input type="checkbox" id="f-small-lot" ${b.lotSize && b.lotSize < 250 && b.lotUnit === 'acre' ? 'checked' : ''} /> Less than .25 acre
         </label>
-        <p class="p-mini text-muted" style="margin-top:2px">For condos and zero lot line, use "less than .25 acres."</p>
+        <p class="field-hint">For condos and zero lot line, use "less than .25 acres."</p>
       </div>
       <div class="field">
         <label>Part of an HOA?</label>
@@ -310,12 +364,12 @@ function renderA12(root) {
         <div class="field-grid dense">
           <div class="field"><label>Name of HOA</label><input type="text" id="f-hoa-name" value="${b.hoaDetails.name}" /></div>
           <div class="field"><label>Phone number</label><input type="tel" id="f-hoa-phone" value="${b.hoaDetails.phone}" /></div>
-          <div class="field"><label>Name of HOA contact or manager <span class="text-muted" style="font-weight:400">(Optional)</span></label><input type="text" id="f-hoa-contactName" value="${b.hoaDetails.contactName}" /></div>
+          <div class="field"><label>Name of HOA contact or manager <span class="field-optional">(Optional)</span></label><input type="text" id="f-hoa-contactName" value="${b.hoaDetails.contactName}" /></div>
         </div>
 
         <div class="field-grid dense">
           <div class="field"><label>Street address</label><input type="text" id="f-hoa-street" value="${b.hoaDetails.street}" /></div>
-          <div class="field"><label>Street address line 2 <span class="text-muted" style="font-weight:400">(Optional)</span></label><input type="text" id="f-hoa-street2" value="${b.hoaDetails.street2}" /></div>
+          <div class="field"><label>Street address line 2 <span class="field-optional">(Optional)</span></label><input type="text" id="f-hoa-street2" value="${b.hoaDetails.street2}" /></div>
           <div class="field"><label>City</label><input type="text" id="f-hoa-city" value="${b.hoaDetails.city}" /></div>
           <div class="field">
             <label>State</label>
@@ -329,7 +383,7 @@ function renderA12(root) {
 
         <div class="field-grid dense">
           <div class="field"><label>Association fee</label><input type="number" id="f-hoa-fee" value="${b.hoaDetails.fee ?? ''}" /></div>
-          <div class="field"><label>Association transfer fee <span class="text-muted" style="font-weight:400">(Optional)</span></label><input type="number" id="f-hoa-transferFee" value="${b.hoaDetails.transferFee ?? ''}" /></div>
+          <div class="field"><label>Association transfer fee <span class="field-optional">(Optional)</span></label><input type="number" id="f-hoa-transferFee" value="${b.hoaDetails.transferFee ?? ''}" /></div>
         </div>
 
         <div class="field">
@@ -345,7 +399,7 @@ function renderA12(root) {
         </div>
 
         <div class="field-grid dense">
-          <div class="field"><label>Current with HOA dues? <span class="text-muted" style="font-weight:400">(Optional)</span></label><div class="segmented" id="hoa-current-segmented">${['Yes', 'No'].map(v => `<button data-val="${v}" class="${b.hoaDetails.currentWithDues === v ? 'active' : ''}">${v}</button>`).join('')}</div></div>
+          <div class="field"><label>Current with HOA dues? <span class="field-optional">(Optional)</span></label><div class="segmented" id="hoa-current-segmented">${['Yes', 'No'].map(v => `<button data-val="${v}" class="${b.hoaDetails.currentWithDues === v ? 'active' : ''}">${v}</button>`).join('')}</div></div>
           <div class="field"><label>Is there a special levy?</label><div class="segmented" id="hoa-levy-segmented">${['Yes', 'No'].map(v => `<button data-val="${v}" class="${b.hoaDetails.specialLevy === v ? 'active' : ''}">${v}</button>`).join('')}</div></div>
         </div>
 
@@ -357,7 +411,7 @@ function renderA12(root) {
       </div>
     </div>
 
-    <div class="field-grid dense" style="margin-top: var(--space-md)">
+    <div class="field-grid dense">
       ${stepperMarkup('beds', fieldLabel('Bedrooms', 'beds'), b.beds)}
       ${stepperMarkup('baths', fieldLabel('Bathrooms', 'baths'), b.baths)}
       ${stepperMarkup('garage', fieldLabel('Garage spaces', 'garage'), b.garage)}
@@ -365,7 +419,7 @@ function renderA12(root) {
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 2 of 11 · Property basics',
+    eyebrow: 'Step 2 of 11 - Property basics',
     title: 'A few basics about the home',
     whyLine: 'We use these details to compare your home to similar listings.',
     bodyHtml: body
@@ -537,7 +591,7 @@ function llcFieldsMarkup(llc) {
     </div>
     <div class="field-grid dense" style="margin-top:var(--space-md)">
       <div class="field"><label>Street address</label><input type="text" data-llc="street" value="${llc.street}" /></div>
-      <div class="field"><label>Street address line 2 <span class="text-muted" style="font-weight:400">(Optional)</span></label><input type="text" data-llc="street2" value="${llc.street2}" /></div>
+      <div class="field"><label>Street address line 2 <span class="field-optional">(Optional)</span></label><input type="text" data-llc="street2" value="${llc.street2}" /></div>
       <div class="field"><label>City</label><input type="text" data-llc="city" value="${llc.city}" /></div>
       <div class="field">
         <label>State</label>
@@ -549,7 +603,7 @@ function llcFieldsMarkup(llc) {
       <div class="field"><label>ZIP code</label><input type="text" data-llc="zip" value="${llc.zip}" /></div>
     </div>
     <div class="field" style="margin-top:var(--space-md)">
-      <label>Contact info for each LLC member required to sign <span class="text-muted" style="font-weight:400">(Optional)</span></label>
+      <label>Contact info for each LLC member required to sign <span class="field-optional">(Optional)</span></label>
       <textarea data-llc="membersList" rows="2">${llc.membersList}</textarea>
     </div>
     <div class="field" style="margin-top:var(--space-md)">
@@ -563,7 +617,7 @@ function showingsContactMarkup(rd) {
   const options = rd.homeowners.map((_, i) => `Homeowner #${i + 1}`);
   return `
     <div class="field" style="margin-top:var(--space-lg)">
-      <label>Which party will handle showings and buyer questions? <span class="text-muted" style="font-weight:400">(Optional)</span></label>
+      <label>Which party will handle showings and buyer questions? <span class="field-optional">(Optional)</span></label>
       ${radioGroupMarkup('showingsContact', options, rd.showingsContact)}
     </div>`;
 }
@@ -642,7 +696,7 @@ function renderA13(root) {
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 3 of 11 · Contact & role',
+    eyebrow: 'Step 3 of 11 - Contact & role',
     title: 'Your role in this sale',
     bodyHtml: body
   }) + footerBarMarkup('Back', 'Continue', !role);
@@ -728,7 +782,7 @@ function renderA14(root) {
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 4 of 11 · Your home’s story',
+    eyebrow: 'Step 4 of 11 - Your home’s story',
     title: 'Tell us about this home',
     bodyHtml: body
   }) + footerBarMarkup('Back', 'Continue', false);
@@ -844,7 +898,7 @@ function renderA15(root) {
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 4 of 11 · Structure & features',
+    eyebrow: 'Step 4 of 11 - Structure & features',
     title: 'Structure & features',
     bodyHtml: `<div class="field-counter" style="margin-bottom:var(--space-md)"><span class="count-big">${answeredCount}</span><span class="count-label">of ${FEATURES_TOTAL} fields</span></div>${body}`
   }) + footerBarMarkup('Back', 'Continue', false);
@@ -931,14 +985,14 @@ function renderA16(root) {
     </div>
     <div class="field-reaction helper">${icon('circle-help')} Need help finding your zoned schools? <a href="#" class="btn-link" style="margin-left:4px">Click here.</a></div>
 
-    <div class="field" style="margin-top: var(--space-lg)">
+    <div class="field">
       <label>Utility companies &amp; average monthly costs</label>
       ${UTILITIES.map(utilityRow).join('')}
     </div>
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 5 of 11 · Schools & utilities',
+    eyebrow: 'Step 5 of 11 - Schools & utilities',
     title: 'Schools & utilities',
     whyLine: "Nobody remembers every bill — mark what you're not sure of.",
     bodyHtml: body
@@ -991,7 +1045,7 @@ registerScreen('A1.7', {
       <div class="screen-fullbleed">
         <div class="fullbleed-inner">
           <p class="act-cover-number">Act 1 complete</p>
-          <div style="max-width:320px; margin: 0 auto var(--space-xl);">${renderLivingCard({ band: false })}</div>
+          <div class="milestone-card" style="max-width:320px; margin: 0 auto var(--space-xl);">${renderLivingCard({ band: false })}</div>
           <p class="p-reg act-cover-line">You've covered the basics — next, we'll walk through what buyers legally need to know.</p>
           <button class="btn btn-primary" id="milestone-continue">Continue to Act 2</button>
         </div>

@@ -42,6 +42,7 @@ function renderApp() {
   root.innerHTML = '';
   screen.render(root);
   refreshIcons();
+  enhanceToggleGroups(root);
   window.scrollTo(0, 0);
 }
 

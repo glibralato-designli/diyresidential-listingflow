@@ -80,6 +80,7 @@
 
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <script src="js/icons.js"></script>
+<script src="js/toggle-dropdown.js"></script>
 <script src="js/state.js"></script>
 <script src="js/living-card.js"></script>
 <script src="js/nav.js"></script>
@@ -147,7 +148,7 @@ coverRow.innerHTML = `
   <div class="proof-cell" style="width:420px; border:1px solid var(--border); border-radius:var(--radius-3xl); padding:var(--space-2xl); text-align:center;">
     <span class="proof-label">Milestone</span>
     <p class="act-cover-number">Act 1 complete</p>
-    <div style="max-width:220px;margin:0 auto var(--space-md);">${(() => { const s = listing; listing = (() => { const l = baseDemoListing(); l.media.photos.front = [demoPhoto()]; return l; })(); const html = renderLivingCard({ band: false }); listing = s; return html; })()}</div>
+    <div class="milestone-card" style="width:260px;margin:0 auto var(--space-md);">${(() => { const s = listing; listing = (() => { const l = baseDemoListing(); l.media.photos.front = [demoPhoto()]; return l; })(); const html = renderLivingCard({ band: false }); listing = s; return html; })()}</div>
     <p class="p-reg act-cover-line">You've covered the basics — next, we'll walk through what buyers legally need to know.</p>
     <button class="btn btn-primary">Continue to Act 2</button>
   </div>
@@ -197,6 +198,7 @@ document.getElementById('question-card-demo-row').innerHTML = `
   </div>
 `;
 refreshIcons();
+enhanceToggleGroups();
 
 /* ---- Act-scoped nav, all states in one render ---- */
 listing = baseDemoListing();

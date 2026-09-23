@@ -31,18 +31,15 @@ const COMPARABLES = [
   { price: '$981,200', beds: 3, baths: 3, sqft: '2,600' }
 ];
 
-function listingCardMiniMarkup(c) {
-  return `
-    <div class="listing-card-mini">
-      <div class="lc-image">${icon('house', 28)}</div>
-      <p class="lc-price">${c.price}</p>
-      <p class="lc-address">Comparable sale nearby</p>
-      <div class="lc-chips">
-        <span class="lc-chip">${icon('bed-double', 14)} ${c.beds} beds</span>
-        <span class="lc-chip">${icon('bath', 14)} ${c.baths} baths</span>
-        <span class="lc-chip">${icon('pencil-ruler', 14)} ${c.sqft} sqft</span>
-      </div>
-    </div>`;
+function comparableCardMarkup(c) {
+  return listingCardMarkup({
+    placeholder: icon('house', 28),
+    title: c.price,
+    address: 'Comparable sale nearby',
+    beds: c.beds,
+    baths: c.baths,
+    sqft: c.sqft
+  });
 }
 
 function renderA41(root) {
@@ -74,14 +71,14 @@ function renderA41(root) {
       </div>
     </div>
 
-    <div class="field" style="margin-top:var(--space-lg)">
+    <div class="field">
       <label>Comparable Properties</label>
       <div class="comparable-row">
-        ${COMPARABLES.map(listingCardMiniMarkup).join('')}
+        ${COMPARABLES.map(comparableCardMarkup).join('')}
       </div>
     </div>
 
-    <div class="card" style="margin-top:var(--space-lg); display:flex; flex-direction:column; gap:var(--space-xl);">
+    <div class="card" style="display:flex; flex-direction:column; gap:var(--space-xl);">
       <p class="h4">Adjust your target price</p>
       <div class="field">
         <label>Target listing price</label>
@@ -117,7 +114,7 @@ function renderA41(root) {
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 10 of 11 · Review & valuation',
+    eyebrow: 'Step 10 of 11 - Review & valuation',
     title: 'Your suggested valuation',
     description: 'Review your pricing, comparable sales, and compliance before proceeding to payment.',
     bodyHtml: body
@@ -158,15 +155,15 @@ function renderA42(root) {
       </div>
     </div>
 
-    <div class="field-reaction helper" style="margin-top:var(--space-md)">
+    <div class="field-reaction helper">
       ${icon('circle-help')} This step has never been unlocked on a live test listing — treat the signing hand-off below as a best-effort reconstruction.
     </div>
 
-    <button class="btn btn-primary" id="open-docusign" style="margin-top:var(--space-lg)">Continue to signing</button>
+    <button class="btn btn-primary" id="open-docusign" style="align-self:flex-start">Continue to signing</button>
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 11 of 11 · Ownership & signing',
+    eyebrow: 'Step 11 of 11 - Ownership & signing',
     title: 'Ownership evidence & signing',
     bodyHtml: body
   }) + footerBarMarkup('Back', 'Publish listing', false) + `
@@ -220,7 +217,7 @@ registerScreen('A4.3', {
         <div class="fullbleed-inner">
           <div class="act-cover-icon">${icon('badge-check', 48)}</div>
           <p class="h2" style="margin-bottom:var(--space-md)">Your listing is live</p>
-          <div style="max-width:320px; margin: 0 auto var(--space-xl);">${renderLivingCard({ band: false })}</div>
+          <div class="milestone-card" style="max-width:320px; margin: 0 auto var(--space-xl);">${renderLivingCard({ band: false })}</div>
           <p class="p-reg act-cover-line">${listing.address.line1 || 'Your home'} is now published at $${Number(listing.price || 0).toLocaleString()}.</p>
           <button class="btn btn-primary" id="view-preview">View your listing</button>
         </div>

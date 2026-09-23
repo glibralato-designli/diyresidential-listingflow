@@ -2,6 +2,7 @@
   /* Brand */
   --primary:            #265f50;
   --primary-faint:      #f3faf7;
+  --primary-muted:      #d7f0e6; /* intent/primary/primary-muted — "Found" badge fill */
   --primary-foreground: #ffffff;
 
   /* Accent — the wizard uses this, not the green */
@@ -46,6 +47,7 @@
   --shadow-2xs: 0 1px 0 0 #0000000d;
   --shadow-xs:  0 1px 2px 0 #0000000d;
   --shadow-sm:  0 1px 2px -1px #00000012, 0 1px 3px 0 #00000012;
+  --focus-ring: 0 0 0 3px #ecce9a80;
 
   /* Control heights */
   --button-lg: 40px; --button-sm: 32px; --input-lg: 40px;
@@ -62,6 +64,7 @@
   --shadow-button: 0 1px 3px 0 #00000012, 0 1px 2px 0 #00000012;
   --p-lg-size: 18px; --p-lg-lh: 28px;
   --p-reg-size: 16px; --p-reg-lh: 24px;
-  --p-sm-size: 14px; --p-sm-lh: 20px; --p-sm-tracking: 0.5px;
-  --p-mini-size: 12px; --p-mini-lh: 16px; --p-mini-tracking: 1.5px;
+  /* Figma tracking is 0.5% / 1.5% of the size, i.e. 0.07px / 0.18px */
+  --p-sm-size: 14px; --p-sm-lh: 20px; --p-sm-tracking: 0.07px;
+  --p-mini-size: 12px; --p-mini-lh: 16px; --p-mini-tracking: 0.18px;
 }

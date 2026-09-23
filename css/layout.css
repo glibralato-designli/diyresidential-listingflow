@@ -88,19 +88,38 @@
   padding: var(--space-3xl) var(--space-2xl) 0;
 }
 
+/* Screen header — confirmed from the real wizard header (node 5663:54551):
+   amber-strong bold eyebrow, h3 title, small muted description, 8px apart. */
 .screen-text-block {
   max-width: 936px;
-  margin: 0 auto var(--space-xl);
+  margin: 0 auto var(--space-2xl);
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
 }
 
 .screen-text-block .eyebrow {
-  color: var(--muted-foreground);
+  color: var(--secondary-strong);
   font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  margin-bottom: var(--space-xs);
+  font-size: var(--p-sm-size);
+  line-height: var(--p-sm-lh);
+  letter-spacing: var(--p-sm-tracking);
+}
+
+.screen-text-block .screen-title {
+  font-size: var(--h3-size);
+  line-height: var(--h3-lh);
+  letter-spacing: var(--h3-tracking);
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.screen-text-block .screen-description {
+  font-size: var(--p-sm-size);
+  line-height: var(--p-sm-lh);
+  letter-spacing: var(--p-sm-tracking);
+  color: var(--muted-foreground);
 }
 
 .split-zones {
@@ -117,11 +136,11 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--space-xl);
 }
 
 .zone-rail {
-  width: 288px;
+  width: 304px;
   flex-shrink: 0;
   position: sticky;
   top: var(--space-2xl);
@@ -210,31 +229,19 @@
   .footer-bar-inner { padding: 0 var(--space-md); }
   .nav-overlay-panel { width: 88vw; }
 
-  /* Two-column form grids stack; long-label toggle groups become a
-     full-width stacked list instead of wrapping mid-button. */
+  /* Two-column form grids stack. Toggle groups never stack here — they
+     swap for a dropdown instead (see js/toggle-dropdown.js). */
   .field-grid { grid-template-columns: 1fr; }
   .checkbox-grid { grid-template-columns: 1fr; }
   .valuation-tiers { flex-direction: column; }
   .choice-grid { grid-template-columns: 1fr 1fr; }
 
-  .segmented { flex-direction: column; width: 100%; }
-  .segmented button {
-    white-space: normal;
-    text-align: left;
-    width: 100%;
-    margin-left: 0;
-    margin-top: -1px;
-    border-radius: 0;
-  }
-  .segmented button:first-child { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
-  .segmented button:last-child { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
-  .segmented button:only-child { border-radius: var(--radius-lg); }
+  .footer-bar-inner { gap: var(--space-s); }
+  .footer-bar-inner .btn { flex: 1; }
 
-  .footer-bar-inner { flex-wrap: wrap; height: auto; gap: var(--space-xs) 0; padding-top: var(--space-xs); padding-bottom: var(--space-xs); }
-  .footer-bar { height: auto; }
-
-  /* yn-row's label + segmented sit side by side on wide screens; let the
-     now-full-width stacked segmented drop to its own line on mobile. */
-  .yn-row { flex-wrap: wrap; }
-  .yn-row .segmented { flex-basis: 100%; }
+  /* yn-row's label and control sit side by side on wide screens; on mobile
+     the dropdown drops to its own full-width line under the label. */
+  .yn-row { flex-wrap: wrap; row-gap: var(--space-xs); }
+  .yn-row > span:first-child { flex-basis: calc(100% - 32px); }
+  .yn-row .segmented-select { flex-basis: 100%; order: 3; }
 }

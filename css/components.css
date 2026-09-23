@@ -39,6 +39,7 @@
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
+  align-self: flex-start;
 }
 
 .badge-secondary { background: var(--secondary); color: var(--secondary-foreground); }
@@ -221,67 +222,135 @@
 
 .nav-overlay-footer .nav-footer-link:hover { background: var(--background); }
 
-/* ---------- Living card ---------- */
+/* ---------- Listing Card (Figma node 4125:1409) ---------- */
+/* Used everywhere a listing is shown: the living card rail/band and the
+   comparables row. Card = 16px padding, 20px gap, radius-24, shadow-2xs;
+   image radius-16; content 8px padding with a muted-bordered stat row. */
 
-/* Radius + shadow confirmed from the real "Listing Card" component
-   (node 6554:118675 etc — radius-24, shadow-2xs, not shadow-sm) */
-.living-card {
+.listing-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-md);
+  background: var(--background);
   border: 1px solid var(--border);
   border-radius: var(--radius-3xl);
-  background: var(--background);
   box-shadow: var(--shadow-2xs);
   overflow: hidden;
-  /* explicitly non-interactive: no hover state, no cursor change, no elevation change */
+  min-width: 0;
+  text-align: left;
 }
 
-.living-card-image {
-  aspect-ratio: 4 / 3;
-  background: var(--border-muted);
+.listing-card-image {
+  position: relative;
+  aspect-ratio: 368 / 256;
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  background: var(--background-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--muted-foreground);
-  font-size: 13px;
-  position: relative;
-  overflow: hidden;
+  font-size: var(--p-sm-size);
+  flex-shrink: 0;
 }
 
-.living-card-image img {
-  width: 100%; height: 100%; object-fit: cover;
+.listing-card-image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   animation: card-photo-in 0.5s ease;
 }
+
+.listing-card-image .badge { position: absolute; top: var(--space-md); left: var(--space-md); }
 
 @keyframes card-photo-in {
   from { opacity: 0; transform: scale(1.04); }
   to { opacity: 1; transform: scale(1); }
 }
 
-.living-card-body { padding: var(--space-md); display: flex; flex-direction: column; gap: var(--space-xs); }
-
-.living-card-address { font-weight: 700; font-size: 15px; }
-.living-card-address.placeholder { color: var(--muted-foreground); font-weight: 600; }
-.living-card-city { font-size: 13px; color: var(--muted-foreground); }
-
-.living-card-chips { display: flex; gap: var(--space-xs); flex-wrap: wrap; margin-top: var(--space-3xs); }
-
-.living-card-chip {
-  font-size: 12px; font-weight: 600;
-  padding: 3px var(--space-xs);
-  border-radius: var(--radius-full);
-  background: var(--background-subtle);
-  color: var(--foreground-alt);
-  border: 1px solid var(--border);
+.listing-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-xs);
+  min-width: 0;
 }
 
-.living-card-chip.ghost { color: var(--muted-foreground); border-style: dashed; }
+.listing-card-heading { display: flex; flex-direction: column; gap: var(--space-s); min-width: 0; }
 
-.living-card-price { font-size: 13px; color: var(--muted-foreground); margin-top: var(--space-3xs); }
+.listing-card-title {
+  font-size: var(--h3-size);
+  line-height: var(--h3-lh);
+  letter-spacing: var(--h3-tracking);
+  font-weight: 700;
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+}
 
-.living-card-rows { margin-top: var(--space-md); display: flex; flex-direction: column; gap: 6px; }
+.listing-card-title.placeholder { color: var(--muted-foreground); }
+
+.listing-card-address {
+  font-size: var(--p-reg-size);
+  line-height: var(--p-reg-lh);
+  color: var(--foreground-alt);
+}
+
+.listing-card-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-muted);
+}
+
+.listing-card-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-xs);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--background-subtle);
+  font-size: var(--p-sm-size);
+  line-height: var(--p-sm-lh);
+  letter-spacing: var(--p-sm-tracking);
+  font-weight: 600;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.listing-card-stat.ghost { border-style: dashed; background: var(--background); }
+
+/* Narrow cards (rail, comparables, milestones) keep the stat row on one line */
+.zone-rail .listing-card-stats, .comparable-row .listing-card-stats, .milestone-card .listing-card-stats { gap: 6px; }
+.zone-rail .listing-card-stat, .comparable-row .listing-card-stat, .milestone-card .listing-card-stat { padding: 6px; gap: 4px; font-size: var(--p-mini-size); line-height: var(--p-mini-lh); letter-spacing: var(--p-mini-tracking); }
+
+/* 16px icon slot; bed/bath SVGs are stored flipped in the source file and
+   the component flips them back (rotate 180 + scaleX -1 = scaleY -1). */
+.listing-card-stat-icon { width: 16px; height: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.listing-card-stat-icon img { display: block; }
+.listing-card-stat-icon.flipped img { transform: scaleY(-1); }
+
+/* Living card extras — "what's missing" rows under the stat row */
+.living-card-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-muted);
+}
 
 .living-card-row {
-  display: flex; align-items: center; justify-content: space-between;
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-s);
+  font-size: var(--p-sm-size);
+  line-height: var(--p-sm-lh);
+  letter-spacing: var(--p-sm-tracking);
 }
 
 .living-card-row .row-label { color: var(--foreground-alt); }
@@ -289,15 +358,25 @@
 .living-card-row .row-action.done { color: var(--primary); }
 .living-card-row .row-action.pending { color: var(--muted-foreground); }
 
-/* Band variant, <1280 */
-.living-card.band { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-md); }
-.living-card.band .living-card-image { width: 88px; height: 66px; aspect-ratio: auto; border-radius: var(--radius-lg); flex-shrink: 0; }
-.living-card.band .living-card-body { padding: 0; flex: 1; }
-.living-card.band .living-card-rows { display: none; }
+/* Band variant (<1280) = the component's "List" type: image left, content right */
+.listing-card.band { flex-direction: row; align-items: stretch; }
+.listing-card.band .listing-card-image { width: 40%; max-width: 240px; aspect-ratio: auto; min-height: 136px; }
+.listing-card.band .listing-card-content { flex: 1; padding: var(--space-xs) 0; }
+
+@media (max-width: 640px) {
+  .listing-card.band { gap: var(--space-md); padding: var(--space-s); }
+  .listing-card.band .listing-card-image { width: 104px; min-height: 104px; }
+  .listing-card.band .listing-card-title { font-size: var(--h4-size); line-height: var(--h4-lh); letter-spacing: 0; }
+  .listing-card.band .listing-card-address { font-size: var(--p-sm-size); line-height: var(--p-sm-lh); }
+  .listing-card.band .listing-card-heading { gap: var(--space-3xs); }
+  .listing-card.band .listing-card-content { gap: var(--space-s); }
+  .listing-card.band .listing-card-stats { padding-top: var(--space-s); gap: 6px; }
+  .listing-card.band .listing-card-stat { padding: 4px 6px; font-size: var(--p-mini-size); line-height: var(--p-mini-lh); }
+}
 
 /* ---------- Act cover / milestone ---------- */
 
-.act-cover-number { font-size: 13px; font-weight: 700; color: var(--muted-foreground); letter-spacing: 1px; text-transform: uppercase; margin-bottom: var(--space-md); }
+.act-cover-number { font-size: var(--p-sm-size); line-height: var(--p-sm-lh); letter-spacing: var(--p-sm-tracking); font-weight: 700; color: var(--secondary-strong); margin-bottom: var(--space-xs); }
 .act-cover-icon { margin-bottom: var(--space-lg); color: var(--secondary-foreground); }
 .act-cover-icon svg { width: 56px; height: 56px; stroke-width: 1.2; }
 .act-cover-title { margin-bottom: var(--space-md); }
@@ -329,11 +408,13 @@
   gap: var(--space-xs);
   padding: var(--space-s);
   border-radius: var(--radius-md);
-  font-size: 13px;
-  margin-top: var(--space-xs);
+  font-size: var(--p-sm-size);
+  line-height: var(--p-sm-lh);
+  letter-spacing: var(--p-sm-tracking);
 }
 
 .field-reaction svg { width: 16px; height: 16px; stroke-width: 2; flex-shrink: 0; margin-top: 2px; }
+.field-hint { font-size: var(--p-mini-size); line-height: var(--p-mini-lh); letter-spacing: var(--p-mini-tracking); color: var(--muted-foreground); }
 
 .field-reaction.good-to-know { background: var(--primary-faint); color: var(--primary); }
 .field-reaction.value-prompt { background: var(--secondary-faint); color: var(--secondary-foreground); }
@@ -362,8 +443,9 @@
 
 /* ---------- Form fields ---------- */
 
-.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.field label { font-size: 13px; font-weight: 600; }
+.field { display: flex; flex-direction: column; gap: var(--space-xs); min-width: 0; }
+.field > label:has(.not-sure-inline) { display: flex; align-items: center; justify-content: space-between; gap: var(--space-xs); }
+.field > label { font-size: var(--p-sm-size); line-height: var(--p-sm-lh); letter-spacing: var(--p-sm-tracking); font-weight: 600; color: var(--foreground); }
 
 /* Pill-shaped inputs, confirmed from the real "Vertical Field" instances —
    fully rounded (radius-full), not the 6px box I'd assumed at first. */
@@ -380,11 +462,13 @@
 /* Select/combobox variant: same pill, but a stronger border (confirmed
    real distinction — #cbd5e1 vs #e2e8f0 — not a filled-vs-empty state) */
 .field select {
+  appearance: none;
+  -webkit-appearance: none;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-full);
   height: var(--input-lg);
-  padding: 0 var(--space-xs) 0 var(--space-md);
-  background: var(--input);
+  padding: 0 40px 0 var(--space-md);
+  background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right var(--space-md) center;
   font-size: 14px;
   box-shadow: var(--shadow-xs);
 }
@@ -404,28 +488,31 @@
 
 .field-grid.dense { gap: var(--space-md) var(--space-2xl); }
 
-/* Found tag: sits on the same line as the category label, connected by a
-   dotted leader — "Bathrooms · · · (Found)" — rather than a separate badge. */
-.found-row {
+/* Label row with a trailing status badge: label on the left, auto spacing,
+   the Badge pinned to the far edge (Figma node 6396:112568). */
+.label-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--space-xs);
   width: 100%;
 }
 
-.found-row-leader {
-  flex: 1;
-  min-width: var(--space-md);
-  border-bottom: 1px dotted var(--border-strong);
-  margin-bottom: 3px;
-}
-
-.found-row-tag {
-  font-size: 12px;
-  font-weight: 700;
+.badge-found {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 4px var(--space-s);
+  border-radius: var(--radius-lg);
+  background: var(--primary-muted);
   color: var(--primary);
-  flex-shrink: 0;
+  font-size: var(--p-sm-size);
+  line-height: var(--p-sm-lh);
+  letter-spacing: var(--p-sm-tracking);
+  font-weight: 700;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ---------- Stepper ("Quick Input"), confirmed real spec ---------- */
@@ -433,6 +520,7 @@
    value field (styled like a text input, not plain text), icon button. */
 
 .stepper { display: flex; flex-direction: column; gap: var(--space-xs); }
+.stepper > .stepper-label { font-size: var(--p-sm-size); line-height: var(--p-sm-lh); letter-spacing: var(--p-sm-tracking); font-weight: 600; }
 
 .stepper-controls { display: flex; align-items: center; gap: var(--space-xs); }
 
@@ -469,10 +557,12 @@
    states are font-bold, not just the selected one. */
 .segmented {
   display: inline-flex;
-  flex-wrap: wrap;
-  row-gap: var(--space-xs);
+  flex-wrap: nowrap;
+  align-self: flex-start;
   filter: drop-shadow(0 1px 1px #0000000d);
 }
+
+.segmented.is-collapsed { display: none; }
 
 .segmented button {
   padding: 9.5px var(--space-md);
@@ -491,10 +581,80 @@
 
 .segmented button.active { background: var(--secondary-faint); color: var(--secondary-foreground); position: relative; z-index: 1; }
 
+/* Dropdown stand-in for a Toggle Group that doesn't fit its row (always on
+   mobile). Same pill, border, weight and selected colours as the toggle. */
+select.segmented-select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: var(--input-lg);
+  min-width: 128px;
+  padding: 0 40px 0 var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--background) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23020617' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right var(--space-md) center;
+  box-shadow: 0 1px 1px #0000000d;
+  font-size: var(--p-sm-size);
+  font-weight: 700;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+select.segmented-select.has-value {
+  background-color: var(--secondary-faint);
+  color: var(--secondary-foreground);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c3e22' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+select.segmented-select:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* ---------- Radio list (agent representation, node 6647:109132) ---------- */
+/* Full-width bordered rows, radio dot + label. Selected = amber fill with
+   the secondary-strong border. */
+.radio-list { display: flex; flex-direction: column; gap: var(--space-xs); }
+
+.radio-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  min-height: 44px;
+  padding: var(--space-s) var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--background);
+  font-size: var(--p-sm-size);
+  line-height: var(--p-sm-lh);
+  letter-spacing: var(--p-sm-tracking);
+  color: var(--foreground);
+  text-align: left;
+  width: 100%;
+}
+
+.radio-row:hover { border-color: var(--border-strong); }
+
+.radio-row .radio-dot {
+  width: 16px; height: 16px; flex-shrink: 0;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-strong);
+  background: var(--input);
+  box-shadow: var(--shadow-xs);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.radio-row.selected { background: var(--secondary-subtle); border-color: var(--secondary-strong); }
+.radio-row.selected .radio-dot { border-color: var(--secondary-strong); }
+.radio-row.selected .radio-dot::after { content: ''; width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--foreground); }
+
+.field-optional { color: var(--muted-foreground); font-weight: 400; }
+
 /* Compact yes/no table row (used for simple non-toggle rows, e.g. financial summaries) */
 .yn-row { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-s) 0; border-bottom: 1px solid var(--border-muted); }
 .yn-row:last-child { border-bottom: none; }
-.yn-row > span:first-child { flex: 1; min-width: 0; }
+.yn-row > span:first-child { flex: 1; min-width: 160px; }
+
+/* Text input with a Toggle Group beside it (lot size + unit) */
+.input-with-toggle { display: flex; align-items: center; gap: var(--space-xs); }
+.input-with-toggle input { flex: 1; min-width: 96px; }
+.input-with-toggle .segmented-select { min-width: 112px; }
 .yn-row .segmented { flex-shrink: 0; }
 
 .yn-row-tooltip { flex-shrink: 0; display: flex; color: var(--muted-foreground); cursor: help; }
@@ -532,13 +692,49 @@
 }
 
 .not-sure-inline.active { background: var(--background-subtle); color: var(--foreground-alt); border-style: solid; }
+.not-sure-inline svg { width: 12px; height: 12px; }
 
 /* ---------- Checkbox grid ---------- */
 
+/* Checkbox — the real component (node 280:104271): 16px box, 4px radius,
+   border-strong + shadow-xs when empty, primary-filled with a white check
+   when checked. Checkbox Group "Block": 24px row, 8px gap, 14px alt label. */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  margin: 0;
+  flex-shrink: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--input) no-repeat center / 14px 14px;
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+}
+
+input[type="checkbox"]:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+input[type="checkbox"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-xs) var(--space-2xl); }
 
-.checkbox-row { display: flex; align-items: center; gap: var(--space-xs); font-size: 14px; }
-.checkbox-row input { width: 16px; height: 16px; }
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: 24px;
+  font-size: var(--p-sm-size);
+  line-height: var(--p-sm-lh);
+  letter-spacing: var(--p-sm-tracking);
+  font-weight: 400;
+  color: var(--foreground-alt);
+  cursor: pointer;
+}
 
 /* ---------- Counter (dense screen header) ---------- */
 
@@ -589,43 +785,7 @@
 
 .comparable-row { display: flex; gap: var(--space-md); overflow-x: auto; padding-bottom: 4px; min-width: 0; }
 
-.listing-card-mini {
-  width: 280px;
-  flex-shrink: 0;
-  background: var(--background);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-3xl);
-  box-shadow: var(--shadow-2xs);
-  padding: var(--space-xs);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.listing-card-mini .lc-image {
-  aspect-ratio: 16 / 11;
-  background: var(--background-subtle);
-  border-radius: var(--radius-2xl);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--muted-foreground);
-}
-
-.listing-card-mini .lc-price { font-size: 16px; font-weight: 700; padding: 0 4px; }
-.listing-card-mini .lc-address { font-size: 12px; color: var(--foreground-alt); padding: 0 4px; }
-
-.listing-card-mini .lc-chips {
-  display: flex; gap: 6px;
-  border-top: 1px solid var(--border-muted);
-  padding-top: var(--space-xs); margin-top: 2px;
-}
-
-.listing-card-mini .lc-chip {
-  flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;
-  background: var(--background-subtle); border: 1px solid var(--border);
-  border-radius: 10px; padding: 6px; font-size: 12px; font-weight: 600; color: var(--muted-foreground);
-}
-
-.listing-card-mini .lc-chip svg { width: 14px; height: 14px; }
+.comparable-row .listing-card { width: 300px; flex-shrink: 0; }
 
 .closing-costs-box {
   background: var(--background-subtle);
@@ -760,4 +920,20 @@
   max-height: 600px;
   opacity: 1;
   margin-top: var(--space-md);
+}
+
+/* In the gap-spaced content column a closed reveal must not leave an empty
+   gap behind; an open one relies on the column gap instead of its margin. */
+.zone-content > .reveal { margin-top: calc(var(--space-xl) * -1); }
+.zone-content > .reveal.open { margin-top: 0; max-height: none; }
+
+.section-label { font-size: var(--p-mini-size); line-height: var(--p-mini-lh); letter-spacing: 1px; font-weight: 700; color: var(--muted-foreground); margin-bottom: calc(var(--space-md) * -1); }
+
+/* ---------- Mobile overrides (must follow the base component rules) ---------- */
+
+@media (max-width: 640px) {
+  .field-grid, .field-grid.dense { grid-template-columns: 1fr; gap: var(--space-xl); }
+  .checkbox-grid { grid-template-columns: 1fr; }
+  .card { padding: var(--space-md); }
+  .question-card { padding: var(--space-md); }
 }

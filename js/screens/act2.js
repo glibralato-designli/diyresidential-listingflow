@@ -39,7 +39,7 @@ function renderA21(root) {
     <div class="card">
       ${SERVICE_CONTRACTS.map(q => `
         <div class="yn-row">
-          <span class="p-sm font-semibold">${q.label} <span class="text-muted" style="font-weight:400">(Optional)</span></span>
+          <span class="p-sm font-semibold">${q.label} <span class="field-optional">(Optional)</span></span>
           <div class="segmented" data-contract="${q.id}">
             <button data-val="yes" class="${c[q.id] === 'yes' ? 'active' : ''}">Yes</button>
             <button data-val="no" class="${c[q.id] === 'no' ? 'active' : ''}">No</button>
@@ -49,7 +49,7 @@ function renderA21(root) {
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 6 of 11 · Service contracts',
+    eyebrow: 'Step 6 of 11 - Service contracts',
     title: 'Any existing service contracts?',
     whyLine: "It's fine to leave these blank — answer what you know.",
     bodyHtml: body
@@ -81,7 +81,7 @@ function renderA22(root) {
   const includedSet = new Set(d.includedItems || []);
 
   const body = `
-    <div class="p-mini font-bold text-muted" style="letter-spacing:1.5px; margin-bottom:var(--space-xs)">PROPERTY DETAILS &amp; INCLUDED ITEMS (RF 201 SECTION A)</div>
+    <div class="section-label">PROPERTY DETAILS &amp; INCLUDED ITEMS (RF 201 SECTION A)</div>
     <div class="field-grid dense">
       <div class="field">
         <label>Date you acquired the property</label>
@@ -94,16 +94,18 @@ function renderA22(root) {
         </div>
       </div>
     </div>
-    ${questionCardMarkup('Is this property new construction (offered for sale for the first time)?', 'newConstruction', ['Yes', 'No'], d.newConstruction, 'data-new-construction')}
-    <div class="field-reaction helper" style="margin-top:var(--space-xs)">${icon('circle-help')} New-construction sales use a different Tennessee disclosure (RF 203).</div>
-    <div class="field" style="margin-top:var(--space-md)">
+    <div class="field">
+      ${questionCardMarkup('Is this property new construction (offered for sale for the first time)?', 'newConstruction', ['Yes', 'No'], d.newConstruction, 'data-new-construction')}
+      <div class="field-reaction helper">${icon('circle-help')} New-construction sales use a different Tennessee disclosure (RF 203).</div>
+    </div>
+    <div class="field">
       <label>Which of these items are present and included in the sale? (Optional)</label>
       ${checkboxGridMarkup('includedItems', INCLUDED_ITEMS, includedSet)}
     </div>
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 7 of 11 · Disclosures (1 of 2)',
+    eyebrow: 'Step 7 of 11 - Disclosures (1 of 2)',
     title: 'Property details & included items',
     whyLine: 'Tennessee law requires this. Answer honestly — Unknown is fine.',
     bodyHtml: body
@@ -200,14 +202,14 @@ function conditionRowMarkup(item, value) {
 function renderA24(root) {
   const d = listing.disclosures;
   const body = `
-    <div class="p-mini font-bold text-muted" style="letter-spacing:1.5px; margin-bottom:var(--space-xs)">KNOWN DEFECTS &amp; MALFUNCTIONS (RF 201 SECTION B)</div>
+    <div class="section-label">KNOWN DEFECTS &amp; MALFUNCTIONS (RF 201 SECTION B)</div>
     <div class="card">
       ${CONDITION_ITEMS.map(item => conditionRowMarkup(item, d[item.id])).join('')}
     </div>
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 7 of 11 · Disclosures (2 of 2)',
+    eyebrow: 'Step 7 of 11 - Disclosures (2 of 2)',
     title: 'Property condition',
     whyLine: "Leave anything you're unsure of as Unknown — it won't block you.",
     bodyHtml: body
@@ -234,7 +236,7 @@ function renderA25(root) {
   const f = listing.financial;
   const body = `
     ${questionCardMarkup('Are there any liens on the property?', 'liens', ['Yes', 'No'], f.liens, 'data-liens')}
-    <div class="field" style="margin-top:var(--space-md)">
+    <div class="field">
       <label>Mortgage balance <span class="chip" style="margin-left:6px">Proposed</span></label>
       <div class="field-reaction helper">${icon('circle-help')} This field is pending its own ticket — included here so net proceeds can eventually account for it.</div>
       <input type="number" id="f-mortgage" value="${f.mortgageBalance ?? ''}" placeholder="0" />
@@ -252,7 +254,7 @@ function renderA25(root) {
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 8 of 11 · Financial & closing',
+    eyebrow: 'Step 8 of 11 - Financial & closing',
     title: 'Financial, mortgage & closing',
     bodyHtml: body
   }) + footerBarMarkup('Back', 'Continue', false);
@@ -282,7 +284,7 @@ registerScreen('A2.6', {
       <div class="screen-fullbleed">
         <div class="fullbleed-inner">
           <p class="act-cover-number">The hard part is done</p>
-          <div style="max-width:320px; margin: 0 auto var(--space-xl);">${renderLivingCard({ band: false })}</div>
+          <div class="milestone-card" style="max-width:320px; margin: 0 auto var(--space-xl);">${renderLivingCard({ band: false })}</div>
           <p class="p-reg act-cover-line">The legal section is behind you. Now the fun part — photos.</p>
           <button class="btn btn-primary" id="milestone-continue">Continue to Act 3</button>
         </div>

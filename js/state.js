@@ -23,6 +23,7 @@ function defaultListing() {
     },
     role: null,
     representedByAgent: null,
+    agentFollowUp: {},
     contact: { firstName: '', lastName: '', phone: '', email: '', confirmEmail: '', prefMethod: null },
     roleDetails: {
       trustName: '',

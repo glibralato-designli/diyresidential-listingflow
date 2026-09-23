@@ -176,8 +176,8 @@ registerScreen('preview', {
         <div class="main-split-container">
           <div class="screen-text-block">
             <div class="eyebrow">Preview</div>
-            <p class="h2">What buyers will see</p>
-            <p class="p-reg text-muted" style="margin-top:8px">This updates as you fill in the wizard. It's never locked.</p>
+            <p class="screen-title">What buyers will see</p>
+            <p class="screen-description">This updates as you fill in the wizard. It's never locked.</p>
           </div>
           <div class="split-zones">
             <div class="zone-content">

@@ -85,15 +85,15 @@ function renderA31(root) {
       </div>
     </div>
 
-    <div style="display:flex; flex-direction:column; gap:var(--space-md); margin-top:var(--space-md)">
+    <div style="display:flex; flex-direction:column; gap:var(--space-md);">
       ${slots.map(photoSlotCardMarkup).join('')}
     </div>
 
-    <button class="btn btn-outline" id="add-area-btn" style="border-style:dashed; margin-top:var(--space-xs)">${icon('plus', 14)} Add another area</button>
+    <button class="btn btn-outline" id="add-area-btn" style="border-style:dashed;">${icon('plus', 14)} Add another area</button>
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 9 of 11 · Photos',
+    eyebrow: 'Step 9 of 11 - Photos',
     title: 'Add photos of your home',
     whyLine: 'More photos help buyers picture living there — and improve your price estimate.',
     bodyHtml: body
@@ -170,10 +170,10 @@ function renderA32(root) {
       </div>
     </div>
 
-    <div class="field" style="margin-top: var(--space-lg)">
+    <div class="field">
       <label>Add your floor plan</label>
       <p class="p-sm text-muted">Buyers love floor plans: they show how the rooms connect and make your home easier to picture.</p>
-      <label style="display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:var(--space-s)">
+      <label class="checkbox-row">
         <input type="checkbox" id="no-floorplan" ${m.noFloorPlan ? 'checked' : ''} /> I don't have a floor plan
       </label>
       <div class="reveal ${!m.noFloorPlan ? 'open' : ''}" id="floorplan-fields">
@@ -203,7 +203,7 @@ function renderA32(root) {
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 9 of 11 · Video & floor plan',
+    eyebrow: 'Step 9 of 11 - Video & floor plan',
     title: 'Video & floor plan',
     bodyHtml: body
   }) + footerBarMarkup('Back', 'Continue', false);
@@ -252,7 +252,7 @@ registerScreen('A3.3', {
       <div class="screen-fullbleed">
         <div class="fullbleed-inner">
           <p class="act-cover-number">Your listing is real now</p>
-          <div style="max-width:320px; margin: 0 auto var(--space-xl);">${renderLivingCard({ band: false })}</div>
+          <div class="milestone-card" style="max-width:320px; margin: 0 auto var(--space-xl);">${renderLivingCard({ band: false })}</div>
           <p class="p-reg act-cover-line">That's what buyers will see first. Last step — pricing and publishing.</p>
           <button class="btn btn-primary" id="milestone-continue">Continue to Act 4</button>
         </div>
