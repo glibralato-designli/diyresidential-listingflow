@@ -1060,10 +1060,9 @@ const UTILITY_LABELS = { electric: 'Electric', gas: 'Gas', water: 'Water', sewer
 function renderA16(root) {
   const u = listing.utilities;
 
-  /* Each utility: company + cost, or one of two answers that stand in for
-     them — "I'm not sure" or N/A (the home doesn't have it). Picking the
-     active answer again clears it. */
-  const UTILITY_STATUS = [{ val: 'not-sure', label: "I'm not sure" }, { val: 'na', label: 'N/A' }];
+  /* Each utility: company + cost, or "I'm not sure" standing in for both.
+     Tapping it again clears it. */
+  const UTILITY_STATUS = [{ val: 'not-sure', label: "I'm not sure" }];
   const utilityRow = (key) => {
     const val = u[key] || {};
     const status = typeof val === 'string' ? val : null;

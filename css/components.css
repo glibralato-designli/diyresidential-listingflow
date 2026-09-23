@@ -1707,3 +1707,10 @@ body.comment-mode .comment-fab { cursor: pointer !important; }
 .form-section .reveal.hoa-reveal { margin-top: calc(var(--space-xl) * -1); }
 .form-section .reveal.hoa-reveal.open { margin-top: 0; max-height: none; }
 .hoa-details { display: flex; flex-direction: column; gap: var(--space-md); padding-top: var(--space-xl); border-top: 1px solid var(--border-muted); }
+
+/* Toggle Groups fill the row they sit in (each option grows with its label).
+   Inline groups that share a row with an input keep their natural width. */
+.segmented { display: flex; width: 100%; align-self: stretch; }
+.segmented button { flex: 1 1 auto; min-width: 0; text-align: center; }
+.input-with-toggle .segmented, .yn-row .segmented, .utility-row .segmented { width: auto; align-self: auto; }
+.input-with-toggle .segmented button, .yn-row .segmented button, .utility-row .segmented button { flex: 0 0 auto; }
