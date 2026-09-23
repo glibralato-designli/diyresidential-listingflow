@@ -41,6 +41,45 @@ function workingScreenMarkup({ eyebrow, title, description, whyLine, bodyHtml })
     </div>`;
 }
 
+/* Achievement header (Figma node 5663:56207): amber check in a double
+   ring, h3 title, muted description, centred. The icon animates in. */
+function achievementHeaderMarkup(title, description) {
+  return `
+    <div class="achievement">
+      <div class="achievement-icon" aria-hidden="true">
+        <img class="achievement-ring-outer" src="assets/icons/achievement-ring-outer.svg" width="48" height="48" alt="" />
+        <img class="achievement-ring-inner" src="assets/icons/achievement-ring-inner.svg" width="42" height="42" alt="" />
+        <span class="achievement-check"><img src="assets/icons/checkmark-circle-01.svg" width="20" height="20" alt="" /></span>
+      </div>
+      <div class="achievement-text">
+        <p class="achievement-title">${title}</p>
+        ${description ? `<p class="achievement-description">${description}</p>` : ''}
+      </div>
+    </div>`;
+}
+
+/* Milestone screen: achievement header, the living card, one action */
+function milestoneMarkup({ title, description, action, id = 'milestone-continue' }) {
+  return `
+    <div class="screen-fullbleed">
+      <div class="fullbleed-inner milestone">
+        ${achievementHeaderMarkup(title, description)}
+        <div class="milestone-card">${renderLivingCard({ band: false })}</div>
+        <button class="btn btn-primary" id="${id}">${action}</button>
+      </div>
+    </div>`;
+}
+
+/* Icon Button, Outline / Large (Figma node 13:762) */
+function iconButtonMarkup(iconName, label, attrs = '') {
+  return `<button type="button" class="icon-button" aria-label="${label}" ${attrs}>${icon(iconName, 20)}</button>`;
+}
+
+/* The footer's Back button, placed at the top of a full-bleed screen */
+function topBackMarkup(id = 'top-back') {
+  return `<div class="top-back"><button class="btn btn-outline" id="${id}">${icon('chevron-left', 16)} Back</button></div>`;
+}
+
 /* Act cover — split layout from the real cover frame (node 6654:185310):
    text column on the left (eyebrow, act number, h1, line, chips, primary
    action), illustration filling the right. The living card sits under the
@@ -959,15 +998,11 @@ registerScreen('A1.6', { type: 'working', render: renderA16 });
 registerScreen('A1.7', {
   type: 'fullbleed',
   render(root) {
-    root.innerHTML = `
-      <div class="screen-fullbleed">
-        <div class="fullbleed-inner">
-          <p class="act-cover-number">Act 1 complete</p>
-          <div class="milestone-card" style="max-width:320px; margin: 0 auto var(--space-xl);">${renderLivingCard({ band: false })}</div>
-          <p class="p-reg act-cover-line">You've covered the basics — next, we'll walk through what buyers legally need to know.</p>
-          <button class="btn btn-primary" id="milestone-continue">Continue to Act 2</button>
-        </div>
-      </div>`;
+    root.innerHTML = milestoneMarkup({
+      title: "You've covered the basics.",
+      description: "Next, we'll walk through what buyers legally need to know.",
+      action: 'Continue to Act 2'
+    });
     root.querySelector('#milestone-continue').addEventListener('click', () => navigateTo('A2.0'));
   }
 });

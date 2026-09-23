@@ -45,21 +45,27 @@ function renderE1(root) {
             <input type="text" id="e1-other-input" value="${listing.propertyTypeOther || ''}" placeholder="e.g. mobile home, mixed-use building" />
           </div>
         </div>
-        <div class="reveal ${listing.propertyType && listing.propertyType !== 'single-family' ? 'open' : ''}" id="e1-stub-note">
-          <div class="field-reaction helper">${icon('circle-help')} This prototype only builds out the single-family branch — you can still continue to see the rest of the flow, but ${listing.propertyType === 'other' ? 'other' : PROPERTY_TYPES.find(t => t.id === listing.propertyType)?.label || 'this'} property types show a placeholder at a few steps.</div>
-        </div>
-        <div style="display:flex; justify-content:flex-end; margin-top: var(--space-xl)">
-          <button class="btn btn-primary" id="e1-continue" ${!listing.propertyType ? 'disabled' : ''}>Continue</button>
-        </div>
+        ${listing.propertyType === 'other' ? `
+          <div style="display:flex; justify-content:flex-end; margin-top: var(--space-xl)">
+            <button class="btn btn-primary" id="e1-continue" ${!(listing.propertyTypeOther || '').trim() ? 'disabled' : ''}>Continue</button>
+          </div>` : ''}
       </div>
     </div>
   `;
 
+  /* PO feedback: picking a type moves on straight away; only "Other"
+     stays here to ask for the type, with Continue beside the input. */
   root.querySelectorAll('.choice-card').forEach(card => {
     card.addEventListener('click', () => {
       listing.propertyType = card.dataset.type;
       saveListing();
-      renderApp();
+      if (card.dataset.type === 'other') {
+        renderApp();
+        const input = document.getElementById('e1-other-input');
+        if (input) input.focus();
+      } else {
+        navigateTo('E2');
+      }
     });
   });
 
@@ -69,7 +75,7 @@ function renderE1(root) {
       listing.propertyTypeOther = otherInput.value;
       saveListing();
       const btn = root.querySelector('#e1-continue');
-      if (btn) btn.disabled = listing.propertyType === 'other' && !otherInput.value.trim();
+      if (btn) btn.disabled = !otherInput.value.trim();
     });
   }
 
@@ -80,7 +86,7 @@ function renderE1(root) {
   const continueBtn = root.querySelector('#e1-continue');
   if (continueBtn) {
     continueBtn.addEventListener('click', () => {
-      if (!listing.propertyType) return;
+      if (!(listing.propertyTypeOther || '').trim()) return;
       saveListing();
       navigateTo('E2');
     });
@@ -103,6 +109,7 @@ function renderE2(root) {
   root.innerHTML = `
     <div class="screen-fullbleed">
       <div class="fullbleed-inner">
+        ${topBackMarkup('e2-back')}
         <p class="p-sm text-muted" style="margin-bottom: var(--space-xs); letter-spacing: 1px; text-transform: uppercase;">How this works</p>
         <p class="h2" style="margin-bottom: var(--space-2xl)">Four parts, at your pace</p>
         <div style="display:flex; flex-direction:column; gap: var(--space-lg); text-align:left; margin-bottom: var(--space-2xl)">
@@ -120,6 +127,7 @@ function renderE2(root) {
     </div>
   `;
   root.querySelector('#e2-start').addEventListener('click', () => navigateTo('A1.0'));
+  root.querySelector('#e2-back').addEventListener('click', () => navigateTo('E1'));
 }
 
 registerScreen('E2', { type: 'fullbleed', render: renderE2 });

@@ -73,8 +73,12 @@ function renderA41(root) {
 
     <div class="field">
       <label>Comparable Properties</label>
-      <div class="comparable-row">
-        ${COMPARABLES.map(comparableCardMarkup).join('')}
+      <div class="comparable-carousel">
+        ${iconButtonMarkup('arrow-left', 'Previous comparables', 'data-comp-go="-1"')}
+        <div class="comparable-row" id="comparable-row">
+          ${COMPARABLES.map(comparableCardMarkup).join('')}
+        </div>
+        ${iconButtonMarkup('arrow-right', 'More comparables', 'data-comp-go="1"')}
       </div>
     </div>
 
@@ -119,6 +123,21 @@ function renderA41(root) {
     description: 'Review your pricing, comparable sales, and compliance before proceeding to payment.',
     bodyHtml: body
   }) + footerBarMarkup('Back', 'Save and Continue', false);
+
+  /* Side arrows page the comparables row one card at a time */
+  const row = root.querySelector('#comparable-row');
+  const arrows = root.querySelectorAll('[data-comp-go]');
+  const syncArrows = () => {
+    arrows[0].disabled = row.scrollLeft <= 2;
+    arrows[1].disabled = row.scrollLeft + row.clientWidth >= row.scrollWidth - 2;
+  };
+  arrows.forEach(btn => btn.addEventListener('click', () => {
+    const card = row.querySelector('.listing-card');
+    const step = card ? card.offsetWidth + 16 : row.clientWidth;
+    row.scrollBy({ left: Number(btn.dataset.compGo) * step, behavior: 'smooth' });
+  }));
+  row.addEventListener('scroll', syncArrows, { passive: true });
+  requestAnimationFrame(syncArrows);
 
   root.querySelector('#price-input').addEventListener('input', e => {
     listing.price = Number(e.target.value) || 0;
@@ -211,17 +230,12 @@ registerScreen('A4.2', { type: 'working', render: renderA42 });
 registerScreen('A4.3', {
   type: 'fullbleed',
   render(root) {
-    const b = listing.basics;
-    root.innerHTML = `
-      <div class="screen-fullbleed">
-        <div class="fullbleed-inner">
-          <div class="act-cover-icon">${icon('badge-check', 48)}</div>
-          <p class="h2" style="margin-bottom:var(--space-md)">Your listing is live</p>
-          <div class="milestone-card" style="max-width:320px; margin: 0 auto var(--space-xl);">${renderLivingCard({ band: false })}</div>
-          <p class="p-reg act-cover-line">${listing.address.line1 || 'Your home'} is now published at $${Number(listing.price || 0).toLocaleString()}.</p>
-          <button class="btn btn-primary" id="view-preview">View your listing</button>
-        </div>
-      </div>`;
+    root.innerHTML = milestoneMarkup({
+      title: 'You did it. Now we take it from here.',
+      description: "Your listing is under review. We'll notify you as soon as it's live — usually within 2–4 hours.",
+      action: 'View your listing',
+      id: 'view-preview'
+    });
     root.querySelector('#view-preview').addEventListener('click', () => navigateTo('preview'));
   }
 });

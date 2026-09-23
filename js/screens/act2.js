@@ -43,6 +43,7 @@ function renderA21(root) {
           <div class="segmented" data-contract="${q.id}">
             <button data-val="yes" class="${c[q.id] === 'yes' ? 'active' : ''}">Yes</button>
             <button data-val="no" class="${c[q.id] === 'no' ? 'active' : ''}">No</button>
+            <button data-val="na" class="${c[q.id] === 'na' ? 'active' : ''}">N/A</button>
           </div>
         </div>`).join('')}
     </div>
@@ -123,52 +124,67 @@ function renderA22(root) {
     });
   });
 
-  wireFooter(root, { onBack: () => navigateTo('A2.1'), onContinue: () => navigateTo('A2.3') });
+  wireFooter(root, { onBack: () => navigateTo('A2.1'), onContinue: () => showCheckpoint(() => navigateTo('A2.4')) });
 }
 
 registerScreen('A2.2', { type: 'working', render: renderA22 });
 
 /* ---------------- A2.3 — Checkpoint ---------------- */
+/* PO feedback: the halfway message plays as a short animation on the way
+   from A2.2 to A2.4 instead of a screen that needs its own click. It
+   dismisses itself (or on any click / key); A2.3 stays as a redirect for
+   old links. */
 
-registerScreen('A2.3', {
-  type: 'fullbleed',
-  render(root) {
-    root.innerHTML = `
-      <div class="screen-fullbleed">
-        <div class="fullbleed-inner">
-          <p class="h2" style="margin-bottom:var(--space-md)">Halfway through the legal section</p>
-          <p class="p-reg act-cover-line">A few more questions about the property's condition, then you're done with disclosures.</p>
-          <button class="btn btn-primary" id="checkpoint-continue">Continue</button>
-        </div>
-      </div>`;
-    root.querySelector('#checkpoint-continue').addEventListener('click', () => navigateTo('A2.4'));
-  }
-});
+function showCheckpoint(next) {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const el = document.createElement('div');
+  el.className = 'checkpoint-overlay';
+  el.setAttribute('role', 'status');
+  el.innerHTML = `<div class="checkpoint-card">${achievementHeaderMarkup(
+    'Halfway through the legal section',
+    "A few more questions about the property's condition, then you're done with disclosures."
+  )}</div>`;
+  document.body.appendChild(el);
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    el.classList.add('leaving');
+    setTimeout(() => { el.remove(); next(); }, reduce ? 0 : 250);
+  };
+  el.addEventListener('click', finish);
+  document.addEventListener('keydown', finish, { once: true });
+  setTimeout(finish, reduce ? 1200 : 2200);
+}
+
+registerScreen('A2.3', { type: 'fullbleed', render() { navigateTo('A2.4'); } });
 
 /* ---------------- A2.4 — Disclosures, batch 2 ---------------- */
 /* Representative subset of the real ~19-item defect list (RF 201 Section B)
-   plus a couple of Section C items — see build notes for the full count. */
+   plus a couple of Section C items — see build notes for the full count.
+
+   PO feedback: ask "Are you aware of any defect or malfunction in…" once
+   and step through the items as a carousel, each with its own icon.
+   Answering moves to the next item on its own; side arrows and the item
+   list below allow going back or jumping. */
 
 const CONDITION_ITEMS = [
-  { id: 'interiorWalls', label: 'Interior walls' },
-  { id: 'ceilings', label: 'Ceilings' },
-  { id: 'roof', label: 'Roof' },
-  { id: 'plumbing', label: 'Plumbing system' },
-  { id: 'electrical', label: 'Electrical system' },
-  { id: 'foundation', label: 'Foundation' },
-  { id: 'centralHeating', label: 'Central heating' },
-  { id: 'centralAir', label: 'Central air conditioning' },
-  { id: 'flooding', label: 'Flooding, drainage, or grading problems' },
-  { id: 'zoning', label: 'Zoning violations or nonconforming uses' }
+  { id: 'interiorWalls', label: 'Interior walls', iconName: 'brick-wall' },
+  { id: 'ceilings', label: 'Ceilings', iconName: 'panel-top' },
+  { id: 'roof', label: 'Roof', iconName: 'house' },
+  { id: 'plumbing', label: 'Plumbing system', iconName: 'droplets' },
+  { id: 'electrical', label: 'Electrical system', iconName: 'zap' },
+  { id: 'foundation', label: 'Foundation', iconName: 'layers' },
+  { id: 'centralHeating', label: 'Central heating', iconName: 'flame' },
+  { id: 'centralAir', label: 'Central air conditioning', iconName: 'snowflake' },
+  { id: 'flooding', label: 'Flooding, drainage, or grading problems', iconName: 'waves' },
+  { id: 'zoning', label: 'Zoning violations or nonconforming uses', iconName: 'map' }
 ];
+const CONDITION_ANSWERS = ['Yes', 'No', 'Unknown'];
 
-/* QuestionCard — confirmed real component for exactly this content (the
-   disclosure questionnaire in the earlier wizard file, node 5663:54799):
-   one bordered card per question, label + help-circle icon header, the
-   toggle group below. Used here and for A2.2/A2.5's yes/no questions;
-   NOT used for A2.1's service contracts, which has no equivalent real
-   screen and where the spec explicitly demands a compact table instead
-   of one-row-per-question sprawl. */
+/* QuestionCard — confirmed real component (node 5663:54799): one bordered
+   card per question, label + help-circle icon header, toggle group below.
+   Used for A2.2/A2.5's standalone yes/no questions. */
 function questionCardMarkup(label, key, options, value, dataAttr) {
   return `
     <div class="question-card">
@@ -182,30 +198,46 @@ function questionCardMarkup(label, key, options, value, dataAttr) {
     </div>`;
 }
 
-/* Dense one-row-per-question layout — explicit user direction: "I don't have
-   any problem to have every question in one block... probably might be a
-   lot." Unlike A2.2/A2.5 (a couple of standalone questions, still full
-   QuestionCards), this list can run to ~20 real RF 201 Section B items, so
-   each question is a compact row (label — toggle — tooltip) inside one card
-   instead of one bordered QuestionCard per item. */
-function conditionRowMarkup(item, value) {
-  return `
-    <div class="yn-row" data-condition="${item.id}">
-      <span class="p-sm font-semibold">Are you aware of any defect or malfunction in ${item.label.toLowerCase()}?</span>
-      <div class="segmented">
-        ${['Yes', 'No', 'Unknown'].map(v => `<button data-val="${v}" class="${value === v ? 'active' : ''}">${v}</button>`).join('')}
-      </div>
-      <span class="yn-row-tooltip" title="Answer honestly to the best of your knowledge — Unknown is fine and won't block you.">${icon('circle-help', 18)}</span>
-    </div>`;
-}
+let defectIndex = 0;
+let defectDirection = 0; // -1 back, 1 forward, 0 none: drives the slide animation
 
 function renderA24(root) {
   const d = listing.disclosures;
+  defectIndex = Math.min(Math.max(defectIndex, 0), CONDITION_ITEMS.length - 1);
+  const item = CONDITION_ITEMS[defectIndex];
+  const answered = CONDITION_ITEMS.filter(i => d[i.id]).length;
+  const slideClass = defectDirection > 0 ? 'from-right' : defectDirection < 0 ? 'from-left' : '';
+  defectDirection = 0;
+
   const body = `
     <div class="section-label">KNOWN DEFECTS &amp; MALFUNCTIONS (RF 201 SECTION B)</div>
-    <div class="card">
-      ${CONDITION_ITEMS.map(item => conditionRowMarkup(item, d[item.id])).join('')}
+    <div class="card defect-carousel">
+      <div class="defect-head">
+        <p class="p-sm font-semibold">Are you aware of any defect or malfunction in…</p>
+        <span class="defect-count">${defectIndex + 1} of ${CONDITION_ITEMS.length}</span>
+      </div>
+      <div class="hd-overall-bar"><span style="width:${Math.round((answered / CONDITION_ITEMS.length) * 100)}%"></span></div>
+
+      <div class="defect-stage">
+        ${iconButtonMarkup('arrow-left', 'Previous item', `data-defect-go="-1" ${defectIndex === 0 ? 'disabled' : ''}`)}
+        <div class="defect-slide ${slideClass}" aria-live="polite">
+          <span class="defect-icon">${icon(item.iconName, 28)}</span>
+          <p class="defect-label">${item.label}</p>
+          <div class="defect-answers" data-condition="${item.id}">
+            ${CONDITION_ANSWERS.map(v => `<button class="defect-answer ${d[item.id] === v ? 'active' : ''}" data-val="${v}">${v}</button>`).join('')}
+          </div>
+        </div>
+        ${iconButtonMarkup('arrow-right', 'Next item', `data-defect-go="1" ${defectIndex === CONDITION_ITEMS.length - 1 ? 'disabled' : ''}`)}
+      </div>
+
+      <div class="defect-list">
+        ${CONDITION_ITEMS.map((i, n) => `
+          <button class="defect-pill ${n === defectIndex ? 'current' : ''} ${d[i.id] ? 'answered' : ''}" data-defect-jump="${n}">
+            ${icon(i.iconName, 14)} ${i.label}${d[i.id] ? ` · <strong>${d[i.id]}</strong>` : ''}
+          </button>`).join('')}
+      </div>
     </div>
+    <div class="field-reaction helper">${icon('circle-help')}<span>Answer honestly to the best of your knowledge — Unknown is fine and won't block you.</span></div>
   `;
 
   root.innerHTML = workingScreenMarkup({
@@ -215,17 +247,24 @@ function renderA24(root) {
     bodyHtml: body
   }) + footerBarMarkup('Back', 'Continue', false);
 
-  root.querySelectorAll('[data-condition]').forEach(row => {
-    row.querySelectorAll('button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        d[row.dataset.condition] = btn.dataset.val;
-        saveListing();
-        renderApp();
-      });
-    });
-  });
+  const go = (to, dir) => { defectIndex = to; defectDirection = dir; renderApp(); };
 
-  wireFooter(root, { onBack: () => navigateTo('A2.3'), onContinue: () => navigateTo('A2.5') });
+  root.querySelectorAll('.defect-answer').forEach(btn => btn.addEventListener('click', () => {
+    d[item.id] = btn.dataset.val;
+    saveListing();
+    if (defectIndex < CONDITION_ITEMS.length - 1) setTimeout(() => go(defectIndex + 1, 1), 180);
+    else renderApp();
+  }));
+  root.querySelectorAll('[data-defect-go]').forEach(btn => btn.addEventListener('click', () => {
+    const dir = Number(btn.dataset.defectGo);
+    go(defectIndex + dir, dir);
+  }));
+  root.querySelectorAll('[data-defect-jump]').forEach(btn => btn.addEventListener('click', () => {
+    const to = Number(btn.dataset.defectJump);
+    go(to, Math.sign(to - defectIndex));
+  }));
+
+  wireFooter(root, { onBack: () => navigateTo('A2.2'), onContinue: () => navigateTo('A2.5') });
 }
 
 registerScreen('A2.4', { type: 'working', render: renderA24 });
@@ -280,15 +319,11 @@ registerScreen('A2.5', { type: 'working', render: renderA25 });
 registerScreen('A2.6', {
   type: 'fullbleed',
   render(root) {
-    root.innerHTML = `
-      <div class="screen-fullbleed">
-        <div class="fullbleed-inner">
-          <p class="act-cover-number">The hard part is done</p>
-          <div class="milestone-card" style="max-width:320px; margin: 0 auto var(--space-xl);">${renderLivingCard({ band: false })}</div>
-          <p class="p-reg act-cover-line">The legal section is behind you. Now the fun part — photos.</p>
-          <button class="btn btn-primary" id="milestone-continue">Continue to Act 3</button>
-        </div>
-      </div>`;
+    root.innerHTML = milestoneMarkup({
+      title: 'The hard part is done.',
+      description: 'The legal section is behind you. Now the fun part — photos.',
+      action: 'Continue to Act 3'
+    });
     root.querySelector('#milestone-continue').addEventListener('click', () => navigateTo('A3.0'));
   }
 });

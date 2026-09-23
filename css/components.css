@@ -615,6 +615,10 @@
 
 .field-grid.dense { gap: var(--space-md) var(--space-2xl); }
 
+/* Grid items may shrink below their content, so a Toggle Group that
+   doesn't fit its column collapses to a dropdown instead of overflowing */
+.field-grid > * { min-width: 0; }
+
 /* Label row with a trailing status badge: label on the left, auto spacing,
    the Badge pinned to the far edge (Figma node 6396:112568). */
 .label-row {
@@ -758,6 +762,7 @@ select.segmented-select:focus-visible { outline: none; box-shadow: var(--focus-r
    in the disclosure/service-contracts screens: one bordered card per
    question, label + help-circle icon header, toggle group below. */
 .question-card {
+  min-width: 0;
   background: var(--background);
   border: 1px solid var(--border-muted);
   border-radius: var(--radius-2xl);
@@ -1106,9 +1111,141 @@ input[type="checkbox"]:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .hd-tab-nav { display: flex; justify-content: space-between; gap: var(--space-s); padding-top: var(--space-md); border-top: 1px solid var(--border-muted); }
 
+/* ---------- Icon Button, Outline / Large (node 13:762) ---------- */
+
+.icon-button {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 40px; min-height: 40px; padding: 10px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 1px 3px 0 #00000012, 0 1px 2px 0 #00000012;
+}
+.icon-button:hover:not(:disabled) { background: var(--background-subtle); }
+.icon-button:disabled { opacity: 0.4; cursor: default; }
+.icon-button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.icon-button svg { width: 20px; height: 20px; }
+
+/* Back at the top of a full-bleed screen (same button as the footer's) */
+.top-back { display: flex; justify-content: flex-start; margin-bottom: var(--space-xl); }
+.top-back .btn svg { width: 16px; height: 16px; }
+
+/* ---------- Achievement header (node 5663:56207) ---------- */
+
+.achievement { display: flex; flex-direction: column; align-items: center; gap: var(--space-md); padding: var(--space-xl); text-align: center; }
+.achievement-icon { position: relative; width: 48px; height: 48px; flex-shrink: 0; }
+.achievement-icon img { position: absolute; display: block; }
+.achievement-ring-outer { left: 0; top: 0; }
+.achievement-ring-inner { left: 3px; top: 3px; }
+.achievement-check { position: absolute; left: 12px; top: 11.5px; width: 24px; height: 24px; }
+.achievement-check img { left: 2px; top: 2px; }
+.achievement-text { display: flex; flex-direction: column; gap: var(--space-xs); max-width: 520px; }
+.achievement-title { font-size: var(--h3-size); line-height: var(--h3-lh); letter-spacing: var(--h3-tracking); font-weight: 700; color: var(--foreground); text-wrap: balance; }
+.achievement-description { font-size: var(--p-sm-size); line-height: var(--p-sm-lh); letter-spacing: var(--p-sm-tracking); color: var(--muted-foreground); }
+
+/* The icon lands: outer ring blooms, inner disc pops, check springs in,
+   then one soft halo pulse. Text follows a beat later. */
+@media (prefers-reduced-motion: no-preference) {
+  .achievement-ring-outer { animation: ach-bloom 0.5s cubic-bezier(.2,.8,.2,1) both; }
+  .achievement-ring-inner { animation: ach-pop 0.45s cubic-bezier(.3,1.6,.5,1) 0.12s both; }
+  .achievement-check { animation: ach-check 0.5s cubic-bezier(.3,1.7,.5,1) 0.3s both; }
+  .achievement-icon::after {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid var(--secondary);
+    animation: ach-halo 0.9s ease-out 0.55s both;
+  }
+  .achievement-text { animation: ach-rise 0.45s ease 0.35s both; }
+}
+@keyframes ach-bloom { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+@keyframes ach-pop { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+@keyframes ach-check { from { opacity: 0; transform: scale(0.2) rotate(-45deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes ach-halo { from { opacity: 0.9; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
+@keyframes ach-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.fullbleed-inner.milestone { display: flex; flex-direction: column; align-items: center; gap: var(--space-xl); }
+.fullbleed-inner.milestone .achievement { padding-bottom: 0; }
+.fullbleed-inner.milestone .milestone-card { width: 100%; max-width: 320px; }
+
+/* Checkpoint interstitial between the two disclosure steps */
+.checkpoint-overlay {
+  position: fixed; inset: 0; z-index: 250;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-md);
+  background: rgba(2, 6, 23, 0.35);
+  animation: cp-fade 0.2s ease both;
+  cursor: pointer;
+}
+.checkpoint-overlay.leaving { animation: cp-fade-out 0.25s ease both; }
+.checkpoint-card { width: 100%; max-width: 440px; background: var(--background); border-radius: var(--radius-3xl); box-shadow: 0 10px 15px -3px #0000001a, 0 4px 6px -4px #0000001a; }
+@media (prefers-reduced-motion: no-preference) {
+  .checkpoint-card { animation: cp-card 0.35s cubic-bezier(.2,.8,.2,1) both; }
+}
+@keyframes cp-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cp-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes cp-card { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: none; } }
+
+/* ---------- Defects carousel (A2.4) ---------- */
+
+.defect-carousel { display: flex; flex-direction: column; gap: var(--space-md); }
+.defect-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-md); }
+.defect-count { font-size: var(--p-mini-size); font-weight: 700; color: var(--muted-foreground); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.defect-stage { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-md) 0; }
+.defect-slide { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: var(--space-md); text-align: center; }
+.defect-icon {
+  width: 56px; height: 56px; border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--secondary-50); color: var(--secondary-foreground);
+}
+.defect-icon svg { width: 28px; height: 28px; stroke-width: 1.5; }
+.defect-label { font-size: var(--h4-size); line-height: var(--h4-lh); font-weight: 700; color: var(--foreground); text-wrap: balance; }
+.defect-answers { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-xs); }
+.defect-answer {
+  min-width: 96px; height: var(--button-lg); padding: 0 var(--space-xl);
+  border-radius: var(--radius-full); border: 1px solid var(--border);
+  background: var(--background); font-size: var(--p-sm-size); font-weight: 700; color: var(--foreground);
+  box-shadow: 0 1px 1px #0000000d;
+}
+.defect-answer:hover { border-color: var(--border-strong); }
+.defect-answer.active { background: var(--secondary-faint); border-color: var(--secondary); color: var(--secondary-foreground); }
+.defect-answer:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .defect-slide.from-right { animation: slide-from-right 0.28s cubic-bezier(.2,.8,.2,1) both; }
+  .defect-slide.from-left { animation: slide-from-left 0.28s cubic-bezier(.2,.8,.2,1) both; }
+}
+@keyframes slide-from-right { from { opacity: 0; transform: translateX(32px); } to { opacity: 1; transform: none; } }
+@keyframes slide-from-left { from { opacity: 0; transform: translateX(-32px); } to { opacity: 1; transform: none; } }
+
+.defect-list { display: flex; flex-wrap: wrap; gap: 6px; padding-top: var(--space-md); border-top: 1px solid var(--border-muted); }
+.defect-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--background-subtle);
+  font-size: var(--p-mini-size); line-height: var(--p-mini-lh); font-weight: 600; color: var(--muted-foreground);
+}
+.defect-pill svg { width: 14px; height: 14px; }
+.defect-pill.answered { color: var(--foreground-alt); background: var(--background); }
+.defect-pill.answered strong { color: var(--secondary-foreground); }
+.defect-pill.current { border-color: var(--secondary-strong); color: var(--foreground); }
+
+/* ---------- Comparables carousel (A4.1) ---------- */
+
+.comparable-carousel { display: flex; align-items: center; gap: var(--space-s); min-width: 0; }
+.comparable-carousel .comparable-row { flex: 1; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.comparable-carousel .comparable-row::-webkit-scrollbar { display: none; }
+.comparable-carousel .listing-card { scroll-snap-align: start; }
+
 /* ---------- Mobile overrides (must follow the base component rules) ---------- */
 
 @media (max-width: 640px) {
+  .defect-stage { gap: var(--space-xs); }
+  .defect-stage .icon-button { min-width: 36px; min-height: 36px; padding: 8px; }
+  .defect-answer { min-width: 0; flex: 1; padding: 0 var(--space-md); }
+  .defect-answers { width: 100%; flex-wrap: nowrap; }
+  .comparable-carousel .icon-button { display: none; }
   .field-grid, .field-grid.dense, .hd-row-3 { grid-template-columns: 1fr; gap: var(--space-xl); }
   .hd-overall-row > span:first-child { display: none; }
   .hd-panel > .stepper { max-width: none; }

@@ -248,15 +248,11 @@ registerScreen('A3.2', { type: 'working', render: renderA32 });
 registerScreen('A3.3', {
   type: 'fullbleed',
   render(root) {
-    root.innerHTML = `
-      <div class="screen-fullbleed">
-        <div class="fullbleed-inner">
-          <p class="act-cover-number">Your listing is real now</p>
-          <div class="milestone-card" style="max-width:320px; margin: 0 auto var(--space-xl);">${renderLivingCard({ band: false })}</div>
-          <p class="p-reg act-cover-line">That's what buyers will see first. Last step — pricing and publishing.</p>
-          <button class="btn btn-primary" id="milestone-continue">Continue to Act 4</button>
-        </div>
-      </div>`;
+    root.innerHTML = milestoneMarkup({
+      title: 'Your listing is real now.',
+      description: "That's what buyers will see first. Last step — pricing and publishing.",
+      action: 'Continue to Act 4'
+    });
     root.querySelector('#milestone-continue').addEventListener('click', () => navigateTo('A4.0'));
   }
 });
