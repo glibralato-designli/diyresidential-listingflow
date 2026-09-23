@@ -324,10 +324,11 @@ function renderA11(root) {
     suggBox.innerHTML = `
       <div class="card" style="padding: var(--space-xs); margin-top: var(--space-xs);">
         ${ADDRESS_SUGGESTIONS.map((s, i) => `
-          <button class="btn-ghost" data-suggestion="${i}" style="display:flex; width:100%; text-align:left; padding: var(--space-s); border-radius: var(--radius-md);">
-            ${icon('map-pin')}&nbsp; ${s.line1}, ${s.city}, ${s.state} ${s.zip}
+          <button class="btn-ghost addr-suggestion" data-suggestion="${i}">
+            ${icon('map-pin', 16)}<span>${s.line1}, ${s.city}, ${s.state} ${s.zip}</span>
           </button>`).join('')}
       </div>`;
+    refreshIcons();
     suggBox.querySelectorAll('[data-suggestion]').forEach(btn => {
       btn.addEventListener('click', () => {
         const s = ADDRESS_SUGGESTIONS[Number(btn.dataset.suggestion)];
@@ -464,26 +465,35 @@ function renderA12(root) {
         <label>${fieldLabel('Square footage', 'sqft')}</label>
         <input type="number" id="f-sqft" value="${b.sqft ?? ''}" />
       </div>
-      <div class="field">
-        <label>${fieldLabel('Lot size', 'lotSize')}</label>
-        <div class="input-with-toggle">
-          <input type="number" id="f-lotSize" value="${b.lotSize ?? ''}" />
-          <div class="segmented" id="lot-unit-segmented">
-            <button data-val="sqft" class="${b.lotUnit === 'sqft' ? 'active' : ''}">Sq Ft</button>
-            <button data-val="acre" class="${b.lotUnit === 'acre' ? 'active' : ''}">Acre</button>
-          </div>
+    </div>
+
+    <div class="field">
+      <label>${fieldLabel('Lot size', 'lotSize')}</label>
+      <div class="input-with-toggle">
+        <input type="number" id="f-lotSize" value="${b.lotSize ?? ''}" />
+        <div class="segmented" id="lot-unit-segmented">
+          <button data-val="sqft" class="${b.lotUnit === 'sqft' ? 'active' : ''}">Sq Ft</button>
+          <button data-val="acre" class="${b.lotUnit === 'acre' ? 'active' : ''}">Acre</button>
         </div>
-        <label class="checkbox-row">
-          <input type="checkbox" id="f-small-lot" ${b.lotSize && b.lotSize < 250 && b.lotUnit === 'acre' ? 'checked' : ''} /> Less than .25 acre
-        </label>
-        <p class="field-hint">For condos and zero lot line, use "less than .25 acres."</p>
       </div>
-      <div class="field">
-        <label>Part of an HOA?</label>
-        <div class="segmented" id="hoa-segmented">
-          <button data-val="yes" class="${b.hoa === 'yes' ? 'active' : ''}">Yes</button>
-          <button data-val="no" class="${b.hoa === 'no' ? 'active' : ''}">No</button>
-        </div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="f-small-lot" ${b.lotSize && b.lotSize < 250 && b.lotUnit === 'acre' ? 'checked' : ''} /> Less than .25 acre
+      </label>
+      <p class="field-hint">For condos and zero lot line, use "less than .25 acres."</p>
+    </div>
+
+    <div class="field-grid dense">
+      ${stepperMarkup('beds', fieldLabel('Bedrooms', 'beds'), b.beds)}
+      ${stepperMarkup('baths', fieldLabel('Full bathrooms', 'baths'), b.baths)}
+      ${stepperMarkup('halfBaths', 'Half bathrooms', b.halfBaths || 0)}
+      ${stepperMarkup('garage', fieldLabel('Garage spaces', 'garage'), b.garage)}
+    </div>
+
+    <div class="field">
+      <label>Part of an HOA?</label>
+      <div class="segmented" id="hoa-segmented">
+        <button data-val="yes" class="${b.hoa === 'yes' ? 'active' : ''}">Yes</button>
+        <button data-val="no" class="${b.hoa === 'no' ? 'active' : ''}">No</button>
       </div>
     </div>
 
@@ -541,12 +551,6 @@ function renderA12(root) {
       </div>
     </div>
 
-    <div class="field-grid dense">
-      ${stepperMarkup('beds', fieldLabel('Bedrooms', 'beds'), b.beds)}
-      ${stepperMarkup('baths', fieldLabel('Full bathrooms', 'baths'), b.baths)}
-      ${stepperMarkup('halfBaths', 'Half bathrooms', b.halfBaths || 0)}
-      ${stepperMarkup('garage', fieldLabel('Garage spaces', 'garage'), b.garage)}
-    </div>
   `;
 
   root.innerHTML = workingScreenMarkup({
@@ -897,7 +901,7 @@ function renderA14(root) {
   const s = listing.story;
   const body = `
     <div class="field">
-      <label class="p-lg font-semibold" style="font-size:18px;">If you had 30 seconds with a buyer standing in your driveway, what would you want them to know about this home?</label>
+      <label class="story-question">If you had 30 seconds with a buyer standing in your driveway, what would you want them to know about this home?</label>
       <textarea id="f-driveway" rows="4">${s.driveway}</textarea>
     </div>
     <div class="reveal ${s.driveway ? 'open' : ''}">
@@ -916,7 +920,7 @@ function renderA14(root) {
     eyebrow: 'Step 4 of 11 - Your home’s story',
     title: 'Tell us about this home',
     bodyHtml: body
-  }) + footerBarMarkup('Back', 'Continue', false);
+  }) + footerBarMarkup('Back', 'Continue', false, { skip: true });
 
   const driveway = root.querySelector('#f-driveway');
   driveway.addEventListener('input', () => {
@@ -929,7 +933,7 @@ function renderA14(root) {
   root.querySelector('#f-willMiss').addEventListener('input', e => { s.willMiss = e.target.value; saveListing(); });
   root.querySelector('#f-whyBought').addEventListener('input', e => { s.whyBought = e.target.value; saveListing(); });
 
-  wireFooter(root, { onBack: () => navigateTo('A1.3'), onContinue: () => navigateTo('A1.5') });
+  wireFooter(root, { onBack: () => navigateTo('A1.3'), onContinue: () => navigateTo('A1.5'), onSkip: () => navigateTo('A1.5') });
 }
 
 registerScreen('A1.4', { type: 'working', render: renderA14 });
@@ -959,31 +963,32 @@ const UTILITY_LABELS = { electric: 'Electric', gas: 'Gas', water: 'Water', sewer
 function renderA16(root) {
   const u = listing.utilities;
 
+  /* Each utility: company + cost, or one of two answers that stand in for
+     them — "I'm not sure" or N/A (the home doesn't have it). Picking the
+     active answer again clears it. */
+  const UTILITY_STATUS = [{ val: 'not-sure', label: "I'm not sure" }, { val: 'na', label: 'N/A' }];
   const utilityRow = (key) => {
     const val = u[key] || {};
-    const notSure = val === 'not-sure';
+    const status = typeof val === 'string' ? val : null;
     return `
-      <div class="field-grid dense" style="align-items:end; margin-bottom: var(--space-md);" data-utility="${key}">
+      <div class="utility-row" data-utility="${key}">
         <div class="field">
           <label>${UTILITY_LABELS[key]} — company name</label>
-          <input type="text" data-u-field="company" value="${notSure ? '' : (val.company || '')}" ${notSure ? 'disabled' : ''} />
+          <input type="text" data-u-field="company" value="${status ? '' : (val.company || '')}" ${status ? 'disabled' : ''} />
         </div>
         <div class="field">
           <label>Avg. monthly cost</label>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <input type="number" data-u-field="cost" value="${notSure ? '' : (val.cost || '')}" ${notSure ? 'disabled' : ''} style="flex:1" />
-            ${notSureChip('u-' + key, notSure)}
-          </div>
+          <input type="number" data-u-field="cost" value="${status ? '' : (val.cost || '')}" ${status ? 'disabled' : ''} />
+        </div>
+        <div class="segmented utility-status" data-keep-toggle data-u-status="${key}" aria-label="${UTILITY_LABELS[key]} answer">
+          ${UTILITY_STATUS.map(o => `<button data-val="${o.val}" class="${status === o.val ? 'active' : ''}">${o.label}</button>`).join('')}
         </div>
       </div>`;
   };
 
-  const body = `
-    <div class="field">
-      <label>Utility companies &amp; average monthly costs</label>
-      ${UTILITIES.map(utilityRow).join('')}
-    </div>
-  `;
+  const body = formSectionMarkup('Utility companies &amp; average monthly costs', `
+    <div class="utility-rows">${UTILITIES.map(utilityRow).join('')}</div>
+  `);
 
   root.innerHTML = workingScreenMarkup({
     eyebrow: 'Step 5 of 11 - Utilities',
@@ -996,20 +1001,20 @@ function renderA16(root) {
     const key = row.dataset.utility;
     row.querySelectorAll('[data-u-field]').forEach(input => {
       input.addEventListener('input', () => {
-        if (typeof u[key] !== 'object' || u[key] === 'not-sure') u[key] = {};
+        if (typeof u[key] !== 'object' || u[key] === null) u[key] = {};
         u[key][input.dataset.uField] = input.value;
         saveListing();
       });
     });
   });
 
-  root.querySelectorAll('[data-not-sure]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const key = btn.dataset.notSure.replace('u-', '');
-      u[key] = u[key] === 'not-sure' ? {} : 'not-sure';
+  root.querySelectorAll('[data-u-status]').forEach(group => {
+    const key = group.dataset.uStatus;
+    group.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+      u[key] = u[key] === btn.dataset.val ? {} : btn.dataset.val;
       saveListing();
       renderApp();
-    });
+    }));
   });
 
   const finishAct1 = () => {

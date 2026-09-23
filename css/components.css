@@ -1007,15 +1007,19 @@ input[type="checkbox"]:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ---------- Progressive reveal ---------- */
 
+/* The 4px inset keeps focus rings and input edges inside the clip */
 .reveal {
   overflow: hidden;
   max-height: 0;
+  padding: 0 4px;
+  margin-inline: -4px;
   opacity: 0;
   transition: max-height 0.35s ease, opacity 0.3s ease, margin-top 0.35s ease;
   margin-top: 0;
 }
 
 .reveal.open {
+  padding-bottom: 4px;
   max-height: 600px;
   opacity: 1;
   margin-top: var(--space-md);
@@ -1305,7 +1309,6 @@ body.comment-mode .comment-fab { cursor: pointer !important; }
 /* A QuestionCard inside a block drops its own border: the block is the card */
 .form-section .question-card { border: 0; border-radius: 0; padding: 0; background: none; }
 .form-section .hd-summary { background: var(--background-subtle); border-color: var(--border-muted); border-radius: var(--radius-2xl); }
-.form-section > .stepper { max-width: calc(50% - var(--space-2xl) / 2); }
 
 /* Help icon only rendered when it has text; the text shows on hover/focus */
 .question-help { position: relative; display: flex; color: var(--muted-foreground); cursor: help; }
@@ -1333,5 +1336,30 @@ body.comment-mode .comment-fab { cursor: pointer !important; }
 
 @media (max-width: 640px) {
   .form-section { padding: var(--space-md); gap: var(--space-lg); }
-  .form-section > .stepper { max-width: none; }
+}
+
+/* Utilities: company, cost and the "I'm not sure" / N/A answer on one row */
+.utility-rows { display: flex; flex-direction: column; }
+.utility-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--space-md); align-items: end; padding: var(--space-md) 0; border-top: 1px solid var(--border-muted); }
+.utility-row:first-child { border-top: 0; padding-top: 0; }
+.utility-row:last-child { padding-bottom: 0; }
+.utility-row input:disabled { background: var(--background-subtle); }
+.utility-row .segmented, .utility-row .segmented-select { align-self: end; }
+.utility-row .segmented-select { min-width: 148px; }
+
+/* A1.4 lead question — Paragraph / Regular / Bold */
+.field > label.story-question { font-size: var(--p-reg-size); line-height: var(--p-reg-lh); font-weight: 700; letter-spacing: 0; text-wrap: pretty; }
+
+/* Address suggestions — Paragraph / Small / Medium */
+.addr-suggestion { display: flex; align-items: center; gap: var(--space-xs); width: 100%; text-align: left; padding: var(--space-s); border-radius: var(--radius-md); font-size: var(--p-sm-size); line-height: var(--p-sm-lh); letter-spacing: var(--p-sm-tracking); font-weight: 500; color: var(--foreground); }
+.addr-suggestion svg { width: 16px; height: 16px; color: var(--muted-foreground); flex-shrink: 0; }
+
+/* E2: Back sits at the top-left of the page, content starts near the top */
+.screen-fullbleed.has-top-back { position: relative; align-items: flex-start; padding-top: var(--space-5xl); }
+.screen-fullbleed.has-top-back > .top-back { position: absolute; top: var(--space-xl); left: max(var(--page-gutter), calc((100% - var(--content-max)) / 2)); margin: 0; }
+
+@media (max-width: 640px) {
+  .utility-row { grid-template-columns: 1fr; gap: var(--space-s); }
+  .screen-fullbleed.has-top-back { flex-direction: column; align-items: stretch; padding-top: var(--space-md); }
+  .screen-fullbleed.has-top-back > .top-back { position: static; margin-bottom: var(--space-xl); }
 }

@@ -34,7 +34,7 @@ function renderE1(root) {
         <p class="p-sm text-muted" style="margin-bottom: var(--space-xl)">We'll tailor the next few questions to your property type.</p>
         <div class="choice-grid">
           ${PROPERTY_TYPES.map(t => `
-            <button class="choice-card ${listing.propertyType === t.id ? 'selected' : ''}" data-type="${t.id}">
+            <button class="choice-card ${t.id === 'other' && listing.propertyType === 'other' ? 'selected' : ''}" data-type="${t.id}">
               ${icon(t.iconName, 36)}
               <span class="choice-label">${t.label}</span>
             </button>`).join('')}
@@ -54,7 +54,8 @@ function renderE1(root) {
   `;
 
   /* PO feedback: picking a type moves on straight away; only "Other"
-     stays here to ask for the type, with Continue beside the input. */
+     stays here to ask for the type, with Continue beside the input.
+     Tiles always start blank (only an open "Other" stays marked). */
   root.querySelectorAll('.choice-card').forEach(card => {
     card.addEventListener('click', () => {
       listing.propertyType = card.dataset.type;
@@ -107,9 +108,9 @@ registerScreen('dashboard', {
 function renderE2(root) {
   const acts = [1, 2, 3, 4];
   root.innerHTML = `
-    <div class="screen-fullbleed">
+    <div class="screen-fullbleed has-top-back">
+      ${topBackMarkup('e2-back')}
       <div class="fullbleed-inner">
-        ${topBackMarkup('e2-back')}
         <p class="p-sm text-muted" style="margin-bottom: var(--space-xs); letter-spacing: 1px; text-transform: uppercase;">How this works</p>
         <p class="h2" style="margin-bottom: var(--space-2xl)">Four parts, at your pace</p>
         <div style="display:flex; flex-direction:column; gap: var(--space-lg); text-align:left; margin-bottom: var(--space-2xl)">

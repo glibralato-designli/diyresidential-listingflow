@@ -64,7 +64,9 @@ function enhanceToggleGroups(root = document) {
     syncToggleSelect(seg, select);
 
     seg.classList.remove('is-collapsed');
-    const collapse = TOGGLE_MOBILE_QUERY.matches || seg.scrollWidth > toggleAvailableWidth(seg) + 1;
+    /* data-keep-toggle: short optional answers stay buttons on mobile when they fit */
+    const forceOnMobile = TOGGLE_MOBILE_QUERY.matches && !seg.hasAttribute('data-keep-toggle');
+    const collapse = forceOnMobile || seg.scrollWidth > toggleAvailableWidth(seg) + 1;
     seg.classList.toggle('is-collapsed', collapse);
     select.hidden = !collapse;
   });
