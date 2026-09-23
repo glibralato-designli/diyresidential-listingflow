@@ -25,10 +25,12 @@ function listingStatMarkup(kind, value, label) {
 function listingCardMarkup(opts) {
   const image = opts.photo
     ? `<img src="${opts.photo}" alt="" />`
-    : (opts.placeholder || '');
+    : opts.emptyArt
+      ? '<img class="listing-card-empty-art" src="assets/icons/gallery-vertical-end.svg" width="67.785" height="68" alt="" />'
+      : (opts.placeholder || '');
   return `
     <div class="listing-card${opts.band ? ' band' : ''}"${opts.label ? ` aria-label="${opts.label}"` : ''}${opts.state ? ` data-living-card-state="${opts.state}"` : ''}>
-      <div class="listing-card-image">
+      <div class="listing-card-image${opts.emptyArt ? ' is-empty' : ''}">
         ${image}
         ${opts.badge ? `<span class="badge badge-primary">${opts.badge}</span>` : ''}
         ${opts.actionsHtml ? `<div class="listing-card-actions">${opts.actionsHtml}</div>` : ''}
@@ -36,7 +38,7 @@ function listingCardMarkup(opts) {
       <div class="listing-card-content">
         <div class="listing-card-heading">
           <p class="listing-card-title${opts.titlePlaceholder ? ' placeholder' : ''}">${opts.title}</p>
-          ${opts.address ? `<p class="listing-card-address">${opts.address}</p>` : ''}
+          ${opts.address ? `<p class="listing-card-address${opts.addressPlaceholder ? ' placeholder' : ''}">${opts.address}</p>` : ''}
         </div>
         <div class="listing-card-stats">
           ${listingStatMarkup('beds', opts.beds, 'beds')}
@@ -56,32 +58,26 @@ function livingCardRowsMarkup() {
     </div>`).join('')}</div>`;
 }
 
+/* Incomplete listing (Figma node 5663:54527): until there are photos the
+   image slot is a warm panel with the gallery icon and a NEW badge; the
+   title is the price, or "Price not estimated yet", and the address sits
+   underneath. */
 function renderLivingCard(opts = {}) {
   const data = livingCardData();
   const hasPrice = (data.state === 'complete' || data.state === 'photographed') && data.priceLine.startsWith('$');
   const place = [data.address, data.city].filter(Boolean).join(', ');
-
-  let title, address, titlePlaceholder = false;
-  if (hasPrice) {
-    title = data.priceLine;
-    address = place;
-  } else if (data.address) {
-    title = data.address;
-    address = data.city;
-  } else {
-    title = 'Your address will appear here';
-    titlePlaceholder = true;
-  }
+  const photo = data.state === 'skeleton' ? null : data.photo;
 
   return listingCardMarkup({
     band: opts.band,
     state: data.state,
     label: 'Listing preview, non-interactive',
-    photo: data.state === 'skeleton' ? null : data.photo,
-    placeholder: 'No photos yet',
-    title,
-    titlePlaceholder,
-    address,
+    photo,
+    emptyArt: !photo,
+    badge: photo ? null : 'NEW',
+    title: hasPrice ? data.priceLine : 'Price not estimated yet',
+    address: place || 'Your address will appear here',
+    addressPlaceholder: !place,
     beds: data.beds,
     baths: data.baths,
     sqft: data.sqft ? data.sqft.toLocaleString() : null,

@@ -1691,3 +1691,14 @@ body.comment-mode .comment-fab { cursor: pointer !important; }
 }
 .how-intro .top-back { margin-bottom: var(--space-md); }
 @media (max-width: 640px) { .how-it-works + .footer-bar .footer-bar-inner > span { display: none; } }
+
+/* Incomplete Listing Card (Figma node 5663:54527): warm panel + gallery icon */
+.listing-card-image.is-empty { background: var(--secondary-50); }
+.listing-card-image img.listing-card-empty-art {
+  position: static; inset: auto; width: 67.785px; height: 68px; object-fit: contain; animation: motion-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.listing-card-address.placeholder { color: var(--muted-foreground); }
+.listing-card.band .listing-card-image.is-empty .badge { top: var(--space-xs); left: var(--space-xs); }
+.listing-card.band .listing-card-image img.listing-card-empty-art,
+.comparable-row .listing-card-image img.listing-card-empty-art,
+.milestone-card .listing-card-image img.listing-card-empty-art { width: 40px; height: 40px; }

@@ -20,6 +20,41 @@ function currentScreenId() {
   return h || 'E1';
 }
 
+/* ---------- Motion: tag blocks that appeared since the last render ----------
+   Screens re-render whole on every answer, so "new" is decided by comparing
+   a light key (id, or class + the block's header text) with what was on screen before. */
+const APPEAR_SELECTOR = '.question-card-reveal, .reveal.open, .prefill-box, .address-map, .address-confirm, .form-section, .question-card, .field-reaction, .info-callout, .hd-summary, .utility-row, .yn-row, .card';
+const GROW_SELECTOR = '.question-card-reveal, .reveal.open, .prefill-box, .address-confirm';
+
+function motionKey(el) {
+  const cls = el.className && typeof el.className === 'string' ? el.className.replace(/\s*motion-\S+/g, '') : '';
+  /* A block's own header (its first child) names it, so an answer that
+     opens content further down doesn't make the whole block look new */
+  const head = el.firstElementChild || el;
+  const text = (head.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 64);
+  return `${el.id || ''}|${cls}|${text}`;
+}
+
+function snapshotMotionKeys(root) {
+  const keys = new Set();
+  root.querySelectorAll(APPEAR_SELECTOR).forEach(el => keys.add(motionKey(el)));
+  return keys;
+}
+
+function tagAppeared(root, before) {
+  let i = 0;
+  root.querySelectorAll(APPEAR_SELECTOR).forEach(el => {
+    if (before.has(motionKey(el))) return;
+    if (el.parentElement && el.parentElement.closest('.motion-appear')) return; // parent already animates
+    el.classList.add('motion-appear');
+    if (el.matches(GROW_SELECTOR)) el.classList.add('motion-grow');
+    el.style.setProperty('--motion-i', String(Math.min(i++, 6)));
+    el.addEventListener('animationend', () => el.classList.remove('motion-appear', 'motion-grow'), { once: true });
+  });
+}
+
+let screenEnterTimer = 0;
+
 function renderApp() {
   const id = currentScreenId();
   const screen = SCREENS[id];
@@ -49,10 +84,19 @@ function renderApp() {
   const keepY = window.scrollY;
   lastRenderedScreen = id;
 
+  const beforeKeys = sameScreen ? snapshotMotionKeys(root) : null;
   root.innerHTML = '';
   screen.render(root);
   refreshIcons();
   enhanceToggleGroups(root);
+  if (sameScreen) tagAppeared(root, beforeKeys);
+  else {
+    clearTimeout(screenEnterTimer);
+    root.classList.remove('screen-enter');
+    void root.offsetWidth; // restart the entrance on back-to-back navigations
+    root.classList.add('screen-enter');
+    screenEnterTimer = setTimeout(() => root.classList.remove('screen-enter'), 900);
+  }
   window.scrollTo(0, sameScreen ? keepY : 0);
   root.querySelectorAll('.act-cover-art img').forEach(img => { if (img.complete) img.classList.add('is-loaded'); });
   refreshCommentPins();

@@ -1,0 +1,91 @@
+/* Motion layer — one set of timings for the whole prototype.
+   Controls ease between states, a screen eases in on navigation, and any
+   block that appears after an answer (follow-ups, prefill prompts, the
+   address map, a new tab's sections) grows in instead of popping. The
+   router tags those blocks with .motion-appear (js/router.js). */
+
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 160ms;
+  --dur: 240ms;
+  --dur-slow: 420ms;
+}
+
+/* ---------- State changes on controls ---------- */
+
+.btn, .segmented button, select.segmented-select, .choice-card, .hd-tab, .hd-tab-count,
+.stepper-btn, .icon-button, .nav-pill, .lp-pill, .defect-answer, .defect-pill, .nav-act-item,
+.nav-step-row, .question-help, .address-map-zoom-btn, .comparable-dots button,
+.field input, .field select, .field textarea, input[type="checkbox"], .prefill-box, .listing-card {
+  transition:
+    background-color var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out),
+    color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out),
+    opacity var(--dur) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.btn:not(:disabled):active, .segmented button:active, .stepper-btn:active, .icon-button:not(:disabled):active,
+.nav-pill:active, .defect-answer:active, .address-map-zoom-btn:active { transform: scale(0.97); }
+
+.choice-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.choice-card:active { transform: translateY(0) scale(0.985); }
+.choice-card.selected svg { animation: motion-pop var(--dur-slow) var(--ease-out); }
+
+.stepper-value { transition: color var(--dur) var(--ease-out); }
+.hd-overall-bar span, .act-segment, .comparable-dots button { transition: width var(--dur-slow) var(--ease-out), background-color var(--dur) var(--ease-out); }
+
+/* ---------- Screen entrance (real navigations only) ---------- */
+
+.screen-enter .screen-text-block,
+.screen-enter .living-card-band,
+.screen-enter .zone-content > *,
+.screen-enter .zone-rail,
+.screen-enter .preview-seller-bar,
+.screen-enter .preview-mockup,
+.screen-enter .fullbleed-inner,
+.screen-enter .act-cover-text > *,
+.screen-enter .how-intro > *,
+.screen-enter .how-step {
+  animation: motion-rise var(--dur-slow) var(--ease-out) both;
+}
+.screen-enter .screen-text-block { animation-delay: 0ms; }
+.screen-enter .zone-rail { animation-delay: 120ms; }
+.screen-enter .zone-content > *:nth-child(1), .screen-enter .act-cover-text > *:nth-child(1), .screen-enter .how-intro > *:nth-child(1), .screen-enter .how-step:nth-child(1) { animation-delay: 40ms; }
+.screen-enter .zone-content > *:nth-child(2), .screen-enter .act-cover-text > *:nth-child(2), .screen-enter .how-intro > *:nth-child(2), .screen-enter .how-step:nth-child(2) { animation-delay: 80ms; }
+.screen-enter .zone-content > *:nth-child(3), .screen-enter .act-cover-text > *:nth-child(3), .screen-enter .how-intro > *:nth-child(3), .screen-enter .how-step:nth-child(3) { animation-delay: 120ms; }
+.screen-enter .zone-content > *:nth-child(4), .screen-enter .act-cover-text > *:nth-child(4), .screen-enter .how-intro > *:nth-child(4), .screen-enter .how-step:nth-child(4) { animation-delay: 160ms; }
+.screen-enter .zone-content > *:nth-child(n+5), .screen-enter .act-cover-text > *:nth-child(n+5) { animation-delay: 200ms; }
+.screen-enter .act-cover-art-inner { animation: motion-fade var(--dur-slow) var(--ease-out) both; }
+.screen-enter .modal-scrim { animation: motion-fade var(--dur) var(--ease-out) both; }
+.screen-enter .modal-card { animation: motion-scale-in var(--dur-slow) var(--ease-out) both; }
+
+/* ---------- Blocks that appear after an answer ---------- */
+
+.motion-appear { animation: motion-rise var(--dur-slow) var(--ease-out) both; animation-delay: calc(var(--motion-i, 0) * 45ms); }
+
+@supports (interpolate-size: allow-keywords) {
+  :root { interpolate-size: allow-keywords; }
+  /* Follow-ups open to their natural height, so the page below slides down */
+  .motion-grow { overflow: hidden; animation: motion-grow var(--dur-slow) var(--ease-out) both; }
+}
+
+/* ---------- Panels ---------- */
+
+.nav-overlay-panel { transition: transform var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out); }
+.nav-overlay-panel.open { box-shadow: 12px 0 32px -12px #0f172a33; }
+.nav-overlay-scrim { transition: opacity var(--dur-slow) var(--ease-out); }
+.nav-step-list:not([hidden]) { animation: motion-rise var(--dur) var(--ease-out) both; }
+.reveal { transition: max-height var(--dur-slow) var(--ease-out), opacity var(--dur) var(--ease-out), margin-top var(--dur-slow) var(--ease-out); }
+
+@keyframes motion-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes motion-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes motion-scale-in { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes motion-pop { 0% { transform: scale(0.85); } 60% { transform: scale(1.08); } 100% { transform: scale(1); } }
+@keyframes motion-grow { from { height: 0; padding-top: 0; padding-bottom: 0; opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
+}
