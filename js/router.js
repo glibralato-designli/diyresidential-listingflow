@@ -2,6 +2,7 @@
    Each screen def: { type: 'modal'|'fullbleed'|'working'|'preview', render(root) } */
 
 const SCREENS = {};
+let lastRenderedScreen = null;
 
 function registerScreen(id, def) {
   SCREENS[id] = def;
@@ -41,11 +42,17 @@ function renderApp() {
   const stepsTrigger = document.getElementById('steps-trigger');
   stepsTrigger.hidden = !(screen.type === 'working' || screen.type === 'preview');
 
+  /* Re-rendering the same screen (a toggle click, a checkbox) keeps the
+     reader's place; only a real navigation starts at the top. */
+  const sameScreen = lastRenderedScreen === id;
+  const keepY = window.scrollY;
+  lastRenderedScreen = id;
+
   root.innerHTML = '';
   screen.render(root);
   refreshIcons();
   enhanceToggleGroups(root);
-  window.scrollTo(0, 0);
+  window.scrollTo(0, sameScreen ? keepY : 0);
   refreshCommentPins();
 }
 

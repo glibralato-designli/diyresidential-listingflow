@@ -472,7 +472,8 @@ function renderA12(root) {
 
     <div class="field-grid dense">
       ${stepperMarkup('beds', fieldLabel('Bedrooms', 'beds'), b.beds)}
-      ${stepperMarkup('baths', fieldLabel('Bathrooms', 'baths'), b.baths)}
+      ${stepperMarkup('baths', fieldLabel('Full bathrooms', 'baths'), b.baths)}
+      ${stepperMarkup('halfBaths', 'Half bathrooms', b.halfBaths || 0)}
       ${stepperMarkup('garage', fieldLabel('Garage spaces', 'garage'), b.garage)}
     </div>
   `;
@@ -862,15 +863,7 @@ function renderA14(root) {
 
 registerScreen('A1.4', { type: 'working', render: renderA14 });
 
-/* ---------------- A1.5 — Structure & features ---------------- */
-/* Field names below are drawn from the production "Home & property details"
-   step (Figma node 6647:109141), a curated subset of its ~45-50 fields —
-   see the build notes for why the full list isn't reproduced here. */
-
-const HOME_STYLES = ['A-Frame', 'Barndominium', 'Cape Cod', 'Colonial', 'Contemporary', 'Cottage', 'Log', 'Ranch', 'Traditional', 'Victorian', 'Other'];
-const CONSTRUCTION_TYPES = ['All Brick', 'Vinyl Siding', 'Wood Siding', 'Stone', 'Stucco', 'Frame', 'Other'];
-const FLOORING_TYPES = ['Carpet', 'Tile', 'Finished Wood', 'Laminate', 'Vinyl', 'Other'];
-const FEATURES_TOTAL = 40;
+/* A1.5 — Home & property details lives in js/screens/home-details.js */
 
 function checkboxGridMarkup(fieldKey, options, selectedSet) {
   return `
@@ -886,121 +879,6 @@ function checkboxGridMarkup(fieldKey, options, selectedSet) {
 function notSureChip(fieldKey, isNotSure) {
   return `<button class="not-sure-inline ${isNotSure ? 'active' : ''}" data-not-sure="${fieldKey}">${icon('circle-help', 12)} I'm not sure</button>`;
 }
-
-function renderA15(root) {
-  const f = listing.features;
-  const answeredCount = Object.keys(f).filter(k => f[k] && (Array.isArray(f[k]) ? f[k].length : true)).length;
-
-  const styleSet = new Set(f.homeStyle || []);
-  const constructionSet = new Set(f.construction || []);
-  const flooringSet = new Set(f.flooring || []);
-  const poolValue = f.pool || null;
-
-  const body = `
-    <div class="field">
-      <label>Describe the style of your home</label>
-      ${checkboxGridMarkup('homeStyle', HOME_STYLES, styleSet)}
-    </div>
-
-    <div class="field-grid dense">
-      ${stepperMarkup('stories', 'Number of stories', f.stories || 1)}
-      <div class="field">
-        <label>Finished attic</label>
-        <div class="segmented" id="attic-segmented">
-          ${['Full', 'Partial', 'No'].map(v => `<button data-val="${v}" class="${f.finishedAttic === v ? 'active' : ''}">${v}</button>`).join('')}
-        </div>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Construction type ${notSureChip('construction', f.construction === 'not-sure')}</label>
-      ${checkboxGridMarkup('construction', CONSTRUCTION_TYPES, constructionSet)}
-    </div>
-
-    <div class="field-grid dense">
-      <div class="field">
-        <label>Basement? ${notSureChip('basement', f.basement === 'not-sure')}</label>
-        <div class="segmented" id="basement-segmented">
-          ${['Yes', 'No'].map(v => `<button data-val="${v}" class="${f.basement === v ? 'active' : ''}">${v}</button>`).join('')}
-        </div>
-      </div>
-      <div class="field">
-        <label>Fireplace? ${notSureChip('fireplace', f.fireplace === 'not-sure')}</label>
-        <div class="segmented" id="fireplace-segmented">
-          ${['Yes', 'No', 'Non-functional'].map(v => `<button data-val="${v}" class="${f.fireplace === v ? 'active' : ''}">${v}</button>`).join('')}
-        </div>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Swimming pool or hot tub?</label>
-      <div class="segmented" id="pool-segmented">
-        ${['No', 'Pool', 'Hot Tub', 'Pool and Hot Tub'].map(v => `<button data-val="${v}" class="${poolValue === v ? 'active' : ''}">${v}</button>`).join('')}
-      </div>
-    </div>
-    <div class="reveal ${poolValue && poolValue !== 'No' ? 'open' : ''}">
-      <div class="field-grid dense">
-        <div class="field"><label>Pool/spa type</label><select id="f-poolType"><option>In-ground</option><option>Above-ground</option></select></div>
-        <div class="field"><label>Heated?</label>
-          <div class="segmented" id="heated-segmented">${['Yes', 'No'].map(v => `<button data-val="${v}" class="${f.poolHeated === v ? 'active' : ''}">${v}</button>`).join('')}</div>
-        </div>
-        <div class="field"><label>Fenced?</label>
-          <div class="segmented" id="fenced-segmented">${['Yes', 'No'].map(v => `<button data-val="${v}" class="${f.poolFenced === v ? 'active' : ''}">${v}</button>`).join('')}</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Flooring types (Optional) ${notSureChip('flooring', f.flooring === 'not-sure')}</label>
-      ${checkboxGridMarkup('flooring', FLOORING_TYPES, flooringSet)}
-    </div>
-  `;
-
-  root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 4 of 11 - Structure & features',
-    title: 'Structure & features',
-    bodyHtml: `<div class="field-counter" style="margin-bottom:var(--space-md)"><span class="count-big">${answeredCount}</span><span class="count-label">of ${FEATURES_TOTAL} fields</span></div>${body}`
-  }) + footerBarMarkup('Back', 'Continue', false);
-
-  root.querySelectorAll('[data-checkbox-group]').forEach(group => {
-    group.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      cb.addEventListener('change', () => {
-        const key = group.dataset.checkboxGroup;
-        const list = new Set(f[key] || []);
-        if (cb.checked) list.add(cb.value); else list.delete(cb.value);
-        f[key] = Array.from(list);
-        saveListing();
-        renderApp();
-      });
-    });
-  });
-
-  root.querySelectorAll('[data-not-sure]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const key = btn.dataset.notSure;
-      f[key] = f[key] === 'not-sure' ? [] : 'not-sure';
-      saveListing();
-      renderApp();
-    });
-  });
-
-  const segMap = {
-    'attic-segmented': 'finishedAttic', 'basement-segmented': 'basement',
-    'fireplace-segmented': 'fireplace', 'pool-segmented': 'pool',
-    'heated-segmented': 'poolHeated', 'fenced-segmented': 'poolFenced'
-  };
-  Object.entries(segMap).forEach(([id, key]) => {
-    const el = root.querySelector(`#${id}`);
-    if (!el) return;
-    el.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => { f[key] = btn.dataset.val; saveListing(); renderApp(); }));
-  });
-
-  wireSteppers(root, null, (key, delta) => { f[key] = Math.max(1, (f[key] || 1) + delta); });
-
-  wireFooter(root, { onBack: () => navigateTo('A1.4'), onContinue: () => navigateTo('A1.6') });
-}
-
-registerScreen('A1.5', { type: 'working', render: renderA15 });
 
 /* ---------------- A1.6 — Utilities ---------------- */
 

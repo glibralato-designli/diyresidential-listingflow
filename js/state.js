@@ -19,7 +19,7 @@ function defaultListing() {
     },
     basics: {
       yearBuilt: null, sqft: null, lotSize: null, lotUnit: 'sqft',
-      beds: 0, baths: 0, garage: 0, hoa: null
+      beds: 0, baths: 0, halfBaths: 0, garage: 0, hoa: null
     },
     role: null,
     representedByAgent: null,
@@ -95,7 +95,7 @@ const ACT_STEPS = {
     { id: 'A1.2', label: 'Property basics' },
     { id: 'A1.3', label: 'Contact & role' },
     { id: 'A1.4', label: "Your home's story" },
-    { id: 'A1.5', label: 'Structure & features' },
+    { id: 'A1.5', label: 'Home details' },
     { id: 'A1.6', label: 'Utilities' }
   ],
   2: [
@@ -186,8 +186,8 @@ function livingCardRows() {
 
   rows.push(
     Object.keys(listing.features).length > 0
-      ? { label: 'Structure & features', action: 'Done', done: true }
-      : { label: 'Structure & features', action: 'Continue', done: false }
+      ? { label: 'Home details', action: 'Done', done: true }
+      : { label: 'Home details', action: 'Continue', done: false }
   );
 
   rows.push(
