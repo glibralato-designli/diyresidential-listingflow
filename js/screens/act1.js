@@ -585,7 +585,9 @@ function renderA12(root) {
       ${stepperMarkup('halfBaths', 'Half bathrooms', b.halfBaths || 0)}
       ${stepperMarkup('garage', fieldLabel('Garage spaces', 'garage'), b.garage)}
     </div>
+    `)}
 
+    ${formSectionMarkup('Home Owners Association', `
     <div class="field">
       <label>Part of an HOA?</label>
       <div class="segmented" id="hoa-segmented">
@@ -593,11 +595,8 @@ function renderA12(root) {
         <button data-val="no" class="${b.hoa === 'no' ? 'active' : ''}">No</button>
       </div>
     </div>
-    `)}
-
-    <div class="reveal ${b.hoa === 'yes' ? 'open' : ''}">
-      <div class="card" style="display:flex; flex-direction:column; gap:var(--space-md);">
-        <p class="p-mini font-bold text-muted" style="letter-spacing:1px;">HOME OWNERS ASSOCIATION</p>
+    <div class="reveal hoa-reveal ${b.hoa === 'yes' ? 'open' : ''}">
+      <div class="hoa-details">
 
         <div class="field-grid dense">
           <div class="field"><label>Name of HOA</label><input type="text" id="f-hoa-name" value="${b.hoaDetails.name}" /></div>
@@ -648,7 +647,7 @@ function renderA12(root) {
         </div>
       </div>
     </div>
-
+    `)}
   `;
 
   root.innerHTML = workingScreenMarkup({

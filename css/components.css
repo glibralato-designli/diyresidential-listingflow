@@ -1702,3 +1702,8 @@ body.comment-mode .comment-fab { cursor: pointer !important; }
 .listing-card.band .listing-card-image img.listing-card-empty-art,
 .comparable-row .listing-card-image img.listing-card-empty-art,
 .milestone-card .listing-card-image img.listing-card-empty-art { width: 40px; height: 40px; }
+
+/* HOA block: the question alone; its fields open under a divider on "Yes" */
+.form-section .reveal.hoa-reveal { margin-top: calc(var(--space-xl) * -1); }
+.form-section .reveal.hoa-reveal.open { margin-top: 0; max-height: none; }
+.hoa-details { display: flex; flex-direction: column; gap: var(--space-md); padding-top: var(--space-xl); border-top: 1px solid var(--border-muted); }
