@@ -1201,7 +1201,7 @@ input[type="checkbox"]:disabled { opacity: 0.5; cursor: not-allowed; }
   cursor: pointer;
 }
 .checkpoint-overlay.leaving { animation: cp-fade-out 0.25s ease both; }
-.checkpoint-card { width: 100%; max-width: 440px; background: var(--background); border-radius: var(--radius-3xl); box-shadow: 0 10px 15px -3px #0000001a, 0 4px 6px -4px #0000001a; }
+.checkpoint-card { width: 100%; max-width: 480px; background: var(--background); border-radius: var(--radius-3xl); box-shadow: 0 10px 15px -3px #0000001a, 0 4px 6px -4px #0000001a; }
 @media (prefers-reduced-motion: no-preference) {
   .checkpoint-card { animation: cp-card 0.35s cubic-bezier(.2,.8,.2,1) both; }
 }
@@ -1405,3 +1405,7 @@ body.comment-mode .comment-fab { cursor: pointer !important; }
   .screen-fullbleed.has-top-back > .top-back { position: static; margin-bottom: var(--space-xl); }
 }
 .nav-act-group:last-of-type { margin-bottom: var(--space-xl); }
+
+/* Checkpoint modal: roomier inside than the inline achievement header */
+.checkpoint-card .achievement { padding: var(--space-3xl) var(--space-2xl); gap: var(--space-lg); }
+@media (max-width: 640px) { .checkpoint-card .achievement { padding: var(--space-2xl) var(--space-xl); } }
