@@ -1396,14 +1396,9 @@ body.comment-mode .comment-fab { cursor: pointer !important; }
 .addr-suggestion { display: flex; align-items: center; gap: var(--space-xs); width: 100%; text-align: left; padding: var(--space-s); border-radius: var(--radius-md); font-size: var(--p-sm-size); line-height: var(--p-sm-lh); letter-spacing: var(--p-sm-tracking); font-weight: 500; color: var(--foreground); }
 .addr-suggestion svg { width: 16px; height: 16px; color: var(--muted-foreground); flex-shrink: 0; }
 
-/* E2: Back sits at the top-left of the page, content starts near the top */
-.screen-fullbleed.has-top-back { position: relative; align-items: flex-start; padding-top: var(--space-5xl); }
-.screen-fullbleed.has-top-back > .top-back { position: absolute; top: var(--space-xl); left: max(var(--page-gutter), calc((100% - var(--content-max)) / 2)); margin: 0; }
 
 @media (max-width: 640px) {
   .utility-row { grid-template-columns: 1fr; gap: var(--space-s); }
-  .screen-fullbleed.has-top-back { flex-direction: column; align-items: stretch; padding-top: var(--space-md); }
-  .screen-fullbleed.has-top-back > .top-back { position: static; margin-bottom: var(--space-xl); }
 }
 /* Room between the last act and the panel footer */
 .nav-overlay-footer { margin-top: auto; padding-bottom: var(--space-md); }
@@ -1658,3 +1653,41 @@ body.comment-mode .comment-fab { cursor: pointer !important; }
 /* E1: Continue sits bottom-right of the modal, disabled until a pick */
 .modal-actions { display: flex; justify-content: flex-end; margin-top: var(--space-xl); }
 @media (max-width: 640px) { .modal-actions .btn { width: 100%; } }
+
+/* ---------- E2 How this works: headline left, numbered acts right ---------- */
+
+.how-it-works {
+  flex: 1; width: 100%; max-width: calc(var(--content-max) + var(--page-gutter) * 2); margin: 0 auto;
+  padding: var(--space-5xl) var(--page-gutter) var(--space-3xl);
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--space-5xl); align-items: center;
+}
+.how-intro { display: flex; flex-direction: column; gap: var(--space-md); max-width: 480px; }
+.how-eyebrow { font-size: var(--p-sm-size); line-height: var(--p-sm-lh); font-weight: 700; color: var(--secondary-strong); }
+.how-title { font-size: var(--h1-size); line-height: var(--h1-lh); letter-spacing: var(--h1-tracking); font-weight: 700; margin: 0; text-wrap: balance; }
+.how-lead { font-size: var(--p-lg-size); line-height: var(--p-lg-lh); color: var(--muted-foreground); }
+.how-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.how-step { display: grid; grid-template-columns: 1fr 104px; align-items: center; gap: var(--space-lg); padding: var(--space-xl) 0; border-bottom: 1px solid var(--border); }
+.how-step:first-child { padding-top: 0; }
+.how-step:last-child { border-bottom: 0; padding-bottom: 0; }
+.how-step-num { font-size: var(--h4-size); line-height: var(--h4-lh); font-weight: 700; color: var(--foreground); font-variant-numeric: tabular-nums; }
+.how-step-text { display: grid; grid-template-columns: 32px 1fr; column-gap: var(--space-md); row-gap: 4px; align-items: baseline; min-width: 0; }
+.how-step-desc { grid-column: 2; }
+.how-step-title { font-size: var(--h4-size); line-height: var(--h4-lh); font-weight: 700; color: var(--foreground); }
+.how-step-desc { font-size: var(--p-reg-size); line-height: var(--p-reg-lh); color: var(--muted-foreground); }
+.how-step-art { width: 104px; height: 104px; object-fit: contain; border-radius: var(--radius-2xl); background: #f2f1ec; padding: 6px; }
+
+@media (max-width: 1023px) {
+  .how-it-works { grid-template-columns: 1fr; gap: var(--space-2xl); align-items: start; padding-top: var(--space-3xl); }
+  .how-title { font-size: var(--h2-size); line-height: var(--h2-lh); }
+}
+@media (max-width: 640px) {
+  .how-it-works { padding-top: var(--space-xl); }
+  .how-step { grid-template-columns: 1fr 72px; gap: var(--space-s); padding: var(--space-lg) 0; }
+  .how-step-text { grid-template-columns: 20px 1fr; column-gap: var(--space-xs); }
+  .how-step-art { width: 72px; height: 72px; }
+  .how-step-title { font-size: var(--p-lg-size); line-height: var(--p-lg-lh); }
+  .how-step-desc { font-size: var(--p-sm-size); line-height: var(--p-sm-lh); }
+  .how-lead { font-size: var(--p-reg-size); line-height: var(--p-reg-lh); }
+}
+.how-intro .top-back { margin-bottom: var(--space-md); }
+@media (max-width: 640px) { .how-it-works + .footer-bar .footer-bar-inner > span { display: none; } }

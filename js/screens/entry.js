@@ -104,24 +104,35 @@ registerScreen('dashboard', {
   }
 });
 
+/* E2 — How this works. Split overview (Airbnb "It's easy to get started"
+   pattern the user pointed to on Mobbin): the promise on the left, the four
+   acts as a numbered list with their cover art on the right, and a pinned
+   bottom bar with the start button. Back stays top-left (earlier request). */
 function renderE2(root) {
   const acts = [1, 2, 3, 4];
   root.innerHTML = `
-    <div class="screen-fullbleed has-top-back">
-      ${topBackMarkup('e2-back')}
-      <div class="fullbleed-inner">
-        <p class="p-sm text-muted" style="margin-bottom: var(--space-xs); letter-spacing: 1px; text-transform: uppercase;">How this works</p>
-        <p class="h2" style="margin-bottom: var(--space-2xl)">Four parts, at your pace</p>
-        <div style="display:flex; flex-direction:column; gap: var(--space-lg); text-align:left; margin-bottom: var(--space-2xl)">
-          ${acts.map(n => `
-            <div class="card" style="display:flex; gap: var(--space-md); align-items:flex-start;">
-              <div class="badge badge-secondary" style="min-width: 64px; justify-content:center;">Act ${n}</div>
-              <div>
-                <p class="h4" style="margin-bottom: 4px;">${ACT_NAMES[n]}</p>
-                <p class="p-sm text-muted">${ACT_PROMISES[n]}</p>
-              </div>
-            </div>`).join('')}
-        </div>
+    <div class="how-it-works">
+      <div class="how-intro">
+        ${topBackMarkup('e2-back')}
+        <p class="how-eyebrow">How this works</p>
+        <h1 class="how-title">Four parts, at your pace</h1>
+        <p class="how-lead">List your home yourself in four short parts. Your progress saves as you go, so you can stop and come back anytime.</p>
+      </div>
+      <ol class="how-steps">
+        ${acts.map(n => `
+          <li class="how-step">
+            <div class="how-step-text">
+              <span class="how-step-num">${n}</span>
+              <p class="how-step-title">${ACT_NAMES[n]}</p>
+              <p class="how-step-desc">${ACT_PROMISES[n]}</p>
+            </div>
+            <img class="how-step-art" src="assets/images/act-${n}-cover.webp" width="1024" height="1024" alt="" loading="lazy" />
+          </li>`).join('')}
+      </ol>
+    </div>
+    <div class="footer-bar">
+      <div class="footer-bar-inner">
+        <span></span>
         <button class="btn btn-primary" id="e2-start">Let's start</button>
       </div>
     </div>
