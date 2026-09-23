@@ -23,6 +23,8 @@ let shellCommentMode = false;
 let pagePlacing = false;     // the page's own "Comment" button is armed
 let pendingReveal = null;    // thread id to scroll to after a navigation
 let placeFrame = 0;
+let anchorLog = null;        // db collection where thread anchors are recorded
+const loggedAnchors = new Set();
 
 function commentModeOn() { return shellCommentMode || pagePlacing; }
 
@@ -89,6 +91,21 @@ function resolveCommentPoint(a) {
 
 function threadIsOnThisScreen(a) {
   return a && (a.screen === COMMENT_ROOT_SCREEN || a.screen === currentScreenId());
+}
+
+/* ---------- Anchor log ----------
+   The comment tools Claude reads threads with don't expose where a pin
+   sits, so the page records each thread's anchor (screen + element) in
+   the artifact's db whenever the shell hands it the thread list. Only
+   new ids are written; a viewer who can't write simply skips it. */
+
+function logCommentAnchors(list) {
+  if (!anchorLog) return;
+  list.forEach(t => {
+    if (!t.id || !t.anchor || loggedAnchors.has(t.id + t.anchor)) return;
+    loggedAnchors.add(t.id + t.anchor);
+    anchorLog.doc(t.id).set({ anchor: t.anchor }).catch(() => {});
+  });
 }
 
 /* ---------- Placement ---------- */
@@ -196,6 +213,7 @@ async function initComments() {
       },
       threads(list) {
         commentThreads = list;
+        logCommentAnchors(list);
         schedulePlaceCommentPins();
       },
       reveal(id) {
@@ -216,6 +234,12 @@ async function initComments() {
     commentAnchors = null; // not granted here: leave the shell's own anchoring on
     return;
   }
+
+  window.claude.use('db').then(db => {
+    if (!db) return;
+    anchorLog = db.collection('comment-anchors');
+    logCommentAnchors(commentThreads);
+  }).catch(() => {});
 
   document.body.insertAdjacentHTML('beforeend', commentFabMarkup());
   refreshIcons();
