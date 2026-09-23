@@ -1576,3 +1576,32 @@ body.comment-mode .comment-fab { cursor: pointer !important; }
   .preview-seller-actions { width: 100%; }
   .preview-seller-actions .btn { flex: 1; }
 }
+
+/* ---------- A4.1 refresh (Figma node 6739:135111) ---------- */
+
+.valuation-tier .tier-value { font-variant-numeric: tabular-nums; }
+.savings-emotional-box { border-radius: 12px; }
+.savings-emotional-box .savings-figure { font-variant-numeric: tabular-nums; }
+.savings-emotional-box .savings-figure sup { font-size: 0.64em; vertical-align: top; line-height: 1; margin-left: 2px; }
+.savings-emotional-box .question-help {
+  width: 32px; height: 32px; border: 1px solid var(--border); border-radius: var(--radius-full);
+  align-items: center; justify-content: center; background: rgba(255,255,255,0.1); color: var(--foreground-alt);
+}
+.savings-emotional-box .question-help svg { width: 18px; height: 18px; }
+.savings-emotional-box .question-help::after { width: 280px; white-space: normal; }
+
+/* Listing Card image actions (the 360 button over the photo) */
+.listing-card-actions { position: absolute; top: var(--space-md); right: var(--space-md); display: flex; gap: var(--space-xs); z-index: 1; }
+.listing-card-action {
+  width: 40px; height: 40px; border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; background: rgba(74, 85, 101, 0.28);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.listing-card-action svg { width: 20px; height: 20px; }
+
+@media (max-width: 640px) {
+  .savings-emotional-box .savings-figure { font-size: var(--h2-size); line-height: var(--h2-lh); }
+  .valuation-tier .tier-value { font-size: var(--h3-size); line-height: var(--h3-lh); }
+  .savings-emotional-box .question-help::after { width: 220px; }
+}

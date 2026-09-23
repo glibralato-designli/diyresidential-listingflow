@@ -15,11 +15,7 @@
    are inert here. Seller controls (edit a step, finish) sit in a bar above
    the mockup so the page itself stays buyer-pure. */
 
-const PREVIEW_TIERS = [
-  { label: 'Conservative', value: 944000 },
-  { label: 'Suggested', value: 960000 },
-  { label: 'Optimal', value: 977000 }
-];
+const PREVIEW_TIERS = VALUATION_TIERS;
 
 function allPhotos() {
   const out = [];
@@ -171,7 +167,7 @@ function lpEstimatedValue() {
       </div>
       <div class="lp-card lp-values">
         ${PREVIEW_TIERS.map(t => `
-          <div class="lp-value-row${t.label === 'Suggested' ? ' is-suggested' : ''}">
+          <div class="lp-value-row${t.suggested ? ' is-suggested' : ''}">
             <span class="lp-value-label">${t.label}</span>
             <span class="lp-value-bar"><span style="width:${Math.round(((t.value - base) / (hi - base)) * 100)}%"></span></span>
             <span class="lp-value-amount">${money(t.value)}</span>
@@ -243,6 +239,7 @@ function lpSimilar() {
       <h2 class="lp-h2">Similar Properties</h2>
       <div class="lp-similar-row">
         ${COMPARABLES.slice(0, 3).map(c => listingCardMarkup({
+          photo: c.photo,
           placeholder: icon('house', 28),
           title: c.price,
           address: 'Comparable sale nearby',

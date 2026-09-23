@@ -31,6 +31,7 @@ function listingCardMarkup(opts) {
       <div class="listing-card-image">
         ${image}
         ${opts.badge ? `<span class="badge badge-primary">${opts.badge}</span>` : ''}
+        ${opts.actionsHtml ? `<div class="listing-card-actions">${opts.actionsHtml}</div>` : ''}
       </div>
       <div class="listing-card-content">
         <div class="listing-card-heading">

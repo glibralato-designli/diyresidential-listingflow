@@ -25,44 +25,58 @@ registerScreen('A4.0', {
    field, a closing-costs breakdown box, and a large-numeral savings callout. */
 
 const COMPARABLES = [
-  { price: '$958,000', beds: 3, baths: 2, sqft: '2,410' },
-  { price: '$972,500', beds: 4, baths: 2, sqft: '2,510' },
-  { price: '$945,000', beds: 3, baths: 2, sqft: '2,380' },
-  { price: '$981,200', beds: 3, baths: 3, sqft: '2,600' }
+  { price: '$958,000', beds: 3, baths: 2, sqft: '2,410', photo: 'assets/images/comp-1.webp' },
+  { price: '$972,500', beds: 4, baths: 2, sqft: '2,510', photo: 'assets/images/comp-2.webp' },
+  { price: '$945,000', beds: 3, baths: 2, sqft: '2,380', photo: 'assets/images/comp-3.webp' },
+  { price: '$981,200', beds: 3, baths: 3, sqft: '2,600', photo: 'assets/images/comp-4.webp' }
 ];
 
+/* Valuation tiers (Figma node 6739:135111) */
+const VALUATION_TIERS = [
+  { label: 'Attractive price', value: 944000 },
+  { label: 'Most likely to sell', value: 960000, suggested: true },
+  { label: 'Top tier', value: 977000 }
+];
+
+/* Listing Card with photo + the 360 action (Figma node 4125:1409) */
 function comparableCardMarkup(c) {
   return listingCardMarkup({
+    photo: c.photo,
     placeholder: icon('house', 28),
     title: c.price,
     address: 'Comparable sale nearby',
     beds: c.beds,
     baths: c.baths,
-    sqft: c.sqft
+    sqft: c.sqft,
+    actionsHtml: `<span class="listing-card-action" aria-hidden="true">${icon('rotate-3d', 20)}</span>`
   });
+}
+
+/* Commission a traditional listing agent would take, less our tech charge,
+   shown as a rounded range (5.75%–6.25% of the price) */
+function savingsRange(price) {
+  const round = n => Math.round(n / 1000) * 1000;
+  return [round(price * 0.0575 - 1395), round(price * 0.0625 - 1395)];
 }
 
 function renderA41(root) {
   if (!listing.price) listing.price = 960000;
 
+  const savingsText = () => {
+    const [lo, hi] = savingsRange(Number(listing.price) || 0);
+    return `$${lo.toLocaleString()} - $${hi.toLocaleString()}<sup>*</sup>`;
+  };
   const netEstimate = () => Math.max(0, Number(listing.price) - 1395 - (listing.financial.mortgageBalance || 0));
 
   const body = `
     <div class="card" style="display:flex; flex-direction:column; gap:var(--space-md);">
       <span class="badge badge-secondary">DIY suggested valuation</span>
       <div class="valuation-tiers">
-        <div class="valuation-tier">
-          <span class="badge badge-neutral">Conservative</span>
-          <p class="tier-value">$944k</p>
-        </div>
-        <div class="valuation-tier suggested">
-          <span class="badge badge-primary">Suggested</span>
-          <p class="tier-value">$960k</p>
-        </div>
-        <div class="valuation-tier">
-          <span class="badge badge-neutral">Optimal</span>
-          <p class="tier-value">$977k</p>
-        </div>
+        ${VALUATION_TIERS.map(t => `
+          <div class="valuation-tier${t.suggested ? ' suggested' : ''}">
+            <span class="badge ${t.suggested ? 'badge-primary' : 'badge-neutral'}">${t.label}</span>
+            <p class="tier-value">$${t.value.toLocaleString()}</p>
+          </div>`).join('')}
       </div>
       <p class="p-sm text-muted">Based on 2 comparable sales within 2 miles, closed in the last 6 months, refined with your home photos.</p>
       <div class="savings-alert-banner">
@@ -107,12 +121,12 @@ function renderA41(root) {
 
       <div class="savings-emotional-box">
         <div style="display:flex; align-items:flex-start; justify-content:space-between;">
-          <span class="badge badge-primary">You are saving</span>
-          <span class="icon-button-outline" title="Compared to a traditional 6% listing commission">${icon('circle-help', 18)}</span>
+          <span class="badge badge-primary">Estimated Savings</span>
+          ${questionHelpMarkup("*Assumes your buyer isn't represented by an agent. If they are, their commission may reduce your savings. A DIY seller with a DIY buyer pays $0 in commission.")}
         </div>
         <div>
-          <p class="savings-figure">$58,120</p>
-          <p class="p-sm text-muted" style="margin-top:var(--space-xs)">That's how much you are saving with DIY Residential, between our tech charge and a traditional 6% listing commission.</p>
+          <p class="savings-figure" id="savings-range">${savingsText()}</p>
+          <p class="p-sm text-muted" style="margin-top:var(--space-xs)">That's roughly what you keep by skipping a traditional listing agent's commission.</p>
         </div>
       </div>
     </div>
@@ -168,6 +182,7 @@ function renderA41(root) {
     listing.price = Number(e.target.value) || 0;
     saveListing();
     root.querySelector('#net-estimate').textContent = `$${netEstimate().toLocaleString()}`;
+    root.querySelector('#savings-range').innerHTML = savingsText();
     refreshLivingCardRail();
   });
 
