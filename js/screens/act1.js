@@ -456,6 +456,7 @@ function renderA12(root) {
       <a href="#/E1" class="btn-link">Edit</a>
     </div>
 
+    ${formSectionMarkup('Property Details', `
     <div class="field-grid dense">
       <div class="field">
         <label>${fieldLabel('Year built', 'yearBuilt')}</label>
@@ -481,7 +482,9 @@ function renderA12(root) {
       </label>
       <p class="field-hint">For condos and zero lot line, use "less than .25 acres."</p>
     </div>
+    `)}
 
+    ${formSectionMarkup('Rooms &amp; Features', `
     <div class="field-grid dense">
       ${stepperMarkup('beds', fieldLabel('Bedrooms', 'beds'), b.beds)}
       ${stepperMarkup('baths', fieldLabel('Full bathrooms', 'baths'), b.baths)}
@@ -496,6 +499,7 @@ function renderA12(root) {
         <button data-val="no" class="${b.hoa === 'no' ? 'active' : ''}">No</button>
       </div>
     </div>
+    `)}
 
     <div class="reveal ${b.hoa === 'yes' ? 'open' : ''}">
       <div class="card" style="display:flex; flex-direction:column; gap:var(--space-md);">
