@@ -36,23 +36,27 @@ function stepIconMarkup(status) {
   return `<span class="nav-step-icon"><span class="dot dot-hollow"></span></span>`;
 }
 
-function renderActGroup(actNum) {
-  const done = isActComplete(actNum);
-  const current = currentAct() === actNum && !done;
-  const upcoming = !done && !current;
-  const expanded = navOverlayExpanded.has(actNum);
+/* Act rows follow the Navigation List (Figma node 6739:116629): three
+   states — done (green, check, chevron-right), current (secondary, number
+   badge) and upcoming (muted, number badge) — with the act's promise under
+   the current and upcoming rows. Any row expands to show its steps. */
+function actStateOf(actNum) {
+  if (isActComplete(actNum)) return 'done';
+  return currentAct() === actNum ? 'current' : 'upcoming';
+}
 
-  if (upcoming) {
-    return `
-      <div class="nav-act-group">
-        <div class="nav-act-header upcoming">${ACT_NAMES[actNum]}</div>
-        <div class="nav-act-promise">${ACT_PROMISES[actNum]}</div>
-      </div>`;
-  }
+function renderActGroup(actNum) {
+  const state = actStateOf(actNum);
+  const expanded = navOverlayExpanded.has(actNum);
+  const lead = state === 'done'
+    ? '<span class="nav-act-check" aria-hidden="true"></span>'
+    : `<span class="nav-act-number" aria-hidden="true">${actNum}</span>`;
+  const chevron = expanded || state !== 'done' ? 'chevron-down-li' : 'chevron-right-li';
+  const chevronSize = chevron === 'chevron-down-li' ? 'width="9.251" height="5.251"' : 'width="5.251" height="9.251"';
 
   const steps = ACT_STEPS[actNum].map(s => {
     const status = stepStatus(actNum, s.id);
-    const clickable = status !== 'todo' || done;
+    const clickable = state === 'done' || status !== 'todo';
     const skipped = status === 'done' && s.id === 'A2.1' && Object.keys(listing.contracts).length === 0;
     return `
       <div class="nav-step-row ${status}" data-clickable="${clickable}" ${clickable ? `data-step="${s.id}"` : ''}>
@@ -63,10 +67,12 @@ function renderActGroup(actNum) {
 
   return `
     <div class="nav-act-group">
-      <div class="nav-act-header ${done ? 'done' : 'current'}" data-act-toggle="${actNum}">
-        <span>${done ? icon('check') + ' ' : ''}${ACT_NAMES[actNum]}</span>
-        ${icon(expanded ? 'chevron-down' : 'chevron-right')}
-      </div>
+      <button type="button" class="nav-act-item ${state}" data-act-toggle="${actNum}" aria-expanded="${expanded}">
+        <span class="nav-act-lead">${lead}</span>
+        <span class="nav-act-name">${ACT_NAMES[actNum]}</span>
+        <img class="nav-act-chevron" src="assets/icons/${chevron}.svg" ${chevronSize} alt="" />
+      </button>
+      ${state !== 'done' ? `<p class="nav-act-promise">${ACT_PROMISES[actNum]}</p>` : ''}
       <div class="nav-step-list" ${expanded ? '' : 'hidden'}>${steps}</div>
     </div>`;
 }
