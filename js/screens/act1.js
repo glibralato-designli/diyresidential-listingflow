@@ -1,20 +1,25 @@
 /* Act 1 — Let's get to know your home (steps 1-5). Section 7 of the spec. */
 
-function footerBarMarkup(backLabel, continueLabel, continueDisabled) {
+function footerBarMarkup(backLabel, continueLabel, continueDisabled, opts = {}) {
   return `
     <div class="footer-bar">
       <div class="footer-bar-inner">
         <button class="btn btn-outline" id="footer-back">${backLabel || 'Back'}</button>
-        <button class="btn btn-primary" id="footer-continue" ${continueDisabled ? 'disabled' : ''}>${continueLabel || 'Continue'}</button>
+        <div class="footer-bar-actions">
+          ${opts.skip ? `<button class="btn btn-outline" id="footer-skip">${opts.skip === true ? 'Skip' : opts.skip}</button>` : ''}
+          <button class="btn btn-primary" id="footer-continue" ${continueDisabled ? 'disabled' : ''}>${continueLabel || 'Continue'}</button>
+        </div>
       </div>
     </div>`;
 }
 
-function wireFooter(root, { onBack, onContinue }) {
+function wireFooter(root, { onBack, onContinue, onSkip }) {
   const backBtn = root.querySelector('#footer-back');
   const continueBtn = root.querySelector('#footer-continue');
+  const skipBtn = root.querySelector('#footer-skip');
   if (backBtn) backBtn.addEventListener('click', onBack);
   if (continueBtn) continueBtn.addEventListener('click', onContinue);
+  if (skipBtn) skipBtn.addEventListener('click', onSkip || onContinue);
 }
 
 function workingScreenMarkup({ eyebrow, title, description, whyLine, bodyHtml }) {
@@ -122,19 +127,24 @@ const AGENT_FOLLOW_UPS = {
   }
 };
 
-function radioListMarkup(name, options, value) {
+/* QuestionCard + Toggle Group — the pattern every yes/no-style question in
+   the wizard uses (see questionCardMarkup in act2.js). Options are
+   {val, label} so stored values stay short while labels read naturally. */
+function toggleQuestionCardMarkup({ name, label, options, value, optional, revealHtml }) {
   return `
-    <div class="radio-list" role="radiogroup" data-radio-list="${name}">
-      ${options.map(o => {
-        const val = typeof o === 'string' ? o : o.val;
-        const label = typeof o === 'string' ? o : o.label;
-        const selected = value === val;
-        return `
-          <button type="button" class="radio-row ${selected ? 'selected' : ''}" role="radio" aria-checked="${selected}" data-val="${val}">
-            <span class="radio-dot"></span>
-            <span>${label}</span>
-          </button>`;
-      }).join('')}
+    <div class="question-card">
+      <div class="question-header">
+        <span class="p-sm font-semibold">${label}${optional ? ' <span class="field-optional">(Optional)</span>' : ''}</span>
+        ${icon('circle-help', 20)}
+      </div>
+      <div class="segmented" data-toggle-q="${name}">
+        ${options.map(o => {
+          const val = typeof o === 'string' ? o : o.val;
+          const text = typeof o === 'string' ? o : o.label;
+          return `<button data-val="${val}" class="${value === val ? 'active' : ''}">${text}</button>`;
+        }).join('')}
+      </div>
+      ${revealHtml ? `<div class="question-card-reveal">${revealHtml}</div>` : ''}
     </div>`;
 }
 
@@ -142,15 +152,36 @@ function agentQuestionMarkup() {
   const rep = listing.representedByAgent;
   const followUp = AGENT_FOLLOW_UPS[rep];
   return `
-    <div class="field">
-      <label>Are you currently represented by a real estate agent? <span class="field-optional">(Optional)</span></label>
-      ${radioListMarkup('agent', AGENT_OPTIONS, rep)}
-    </div>
-    ${followUp ? `
-      <div class="field">
-        <label>${followUp.question}</label>
-        ${radioListMarkup('agent-follow-up', followUp.options, listing.agentFollowUp[rep])}
-      </div>` : ''}`;
+    ${toggleQuestionCardMarkup({
+      name: 'agent',
+      label: 'Are you currently represented by a real estate agent?',
+      optional: true,
+      options: AGENT_OPTIONS,
+      value: rep
+    })}
+    ${followUp ? toggleQuestionCardMarkup({
+      name: 'agent-follow-up',
+      label: followUp.question,
+      options: followUp.options,
+      value: listing.agentFollowUp[rep]
+    }) : ''}`;
+}
+
+/* Schools — asked here, next to the address they depend on, instead of on
+   the Utilities step. The three inputs only open on "Yes". */
+function schoolsQuestionMarkup() {
+  const sc = listing.schools;
+  return toggleQuestionCardMarkup({
+    name: 'schools-nearby',
+    label: 'Are there any schools nearby?',
+    options: ['Yes', 'No'],
+    value: sc.nearby,
+    revealHtml: sc.nearby === 'Yes' ? `
+      <div class="field"><label for="f-elementary">Elementary School</label><input type="text" id="f-elementary" value="${sc.elementary}" /></div>
+      <div class="field"><label for="f-middle">Middle School</label><input type="text" id="f-middle" value="${sc.middle}" /></div>
+      <div class="field"><label for="f-high">High School</label><input type="text" id="f-high" value="${sc.high}" /></div>
+      <div class="field-reaction helper">${icon('circle-help')}<span>Need help finding your zoned schools? <a href="#" class="btn-link" style="margin-left:4px">Click here.</a></span></div>` : ''
+  });
 }
 
 const ADDRESS_SUGGESTIONS = [
@@ -210,6 +241,7 @@ function renderA11(root) {
       </div>
       ${prefillBox()}
     ` : ''}
+    ${schoolsQuestionMarkup()}
     ${agentQuestionMarkup()}
     <div class="field-reaction helper">${icon('circle-help')} We'll ask for proof of ownership later, just before signing.</div>
   `;
@@ -264,19 +296,15 @@ function renderA11(root) {
     renderApp();
   });
 
-  root.querySelectorAll('[data-radio-list="agent"] button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      listing.representedByAgent = btn.dataset.val;
-      saveListing();
-      renderApp();
-    });
+  const toggleQ = (name, fn) => root.querySelectorAll(`[data-toggle-q="${name}"] button`).forEach(btn => {
+    btn.addEventListener('click', () => { fn(btn.dataset.val); saveListing(); renderApp(); });
   });
-  root.querySelectorAll('[data-radio-list="agent-follow-up"] button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      listing.agentFollowUp[listing.representedByAgent] = btn.dataset.val;
-      saveListing();
-      renderApp();
-    });
+  toggleQ('agent', v => { listing.representedByAgent = v; });
+  toggleQ('agent-follow-up', v => { listing.agentFollowUp[listing.representedByAgent] = v; });
+  toggleQ('schools-nearby', v => { listing.schools.nearby = v; });
+  ['elementary', 'middle', 'high'].forEach(k => {
+    const el = root.querySelector(`#f-${k}`);
+    if (el) el.addEventListener('input', () => { listing.schools[k] = el.value; saveListing(); });
   });
 
   wireFooter(root, {
@@ -974,7 +1002,7 @@ function renderA15(root) {
 
 registerScreen('A1.5', { type: 'working', render: renderA15 });
 
-/* ---------------- A1.6 — Schools & utilities ---------------- */
+/* ---------------- A1.6 — Utilities ---------------- */
 
 const UTILITIES = ['electric', 'gas', 'water', 'sewer', 'trash'];
 const UTILITY_LABELS = { electric: 'Electric', gas: 'Gas', water: 'Water', sewer: 'Sewer', trash: 'Trash' };
@@ -1003,35 +1031,17 @@ function renderA16(root) {
 
   const body = `
     <div class="field">
-      <label>Elementary School</label>
-      <input type="text" id="f-elementary" value="${listing.utilities.elementary || ''}" />
-    </div>
-    <div class="field">
-      <label>Middle School</label>
-      <input type="text" id="f-middle" value="${listing.utilities.middle || ''}" />
-    </div>
-    <div class="field">
-      <label>High School</label>
-      <input type="text" id="f-high" value="${listing.utilities.high || ''}" />
-    </div>
-    <div class="field-reaction helper">${icon('circle-help')} Need help finding your zoned schools? <a href="#" class="btn-link" style="margin-left:4px">Click here.</a></div>
-
-    <div class="field">
       <label>Utility companies &amp; average monthly costs</label>
       ${UTILITIES.map(utilityRow).join('')}
     </div>
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 5 of 11 - Schools & utilities',
-    title: 'Schools & utilities',
+    eyebrow: 'Step 5 of 11 - Utilities',
+    title: 'Utilities',
     whyLine: "Nobody remembers every bill — mark what you're not sure of.",
     bodyHtml: body
-  }) + footerBarMarkup('Back', 'Continue', false);
-
-  ['elementary', 'middle', 'high'].forEach(k => {
-    root.querySelector(`#f-${k}`).addEventListener('input', e => { u[k] = e.target.value; saveListing(); });
-  });
+  }) + footerBarMarkup('Back', 'Continue', false, { skip: true });
 
   root.querySelectorAll('[data-utility]').forEach(row => {
     const key = row.dataset.utility;
@@ -1053,16 +1063,15 @@ function renderA16(root) {
     });
   });
 
-  wireFooter(root, {
-    onBack: () => navigateTo('A1.5'),
-    onContinue: () => {
-      if (!listing.progress.completedActs.includes(1)) {
-        listing.progress.completedActs.push(1);
-        saveListing();
-      }
-      navigateTo('A1.7');
+  const finishAct1 = () => {
+    if (!listing.progress.completedActs.includes(1)) {
+      listing.progress.completedActs.push(1);
+      saveListing();
     }
-  });
+    navigateTo('A1.7');
+  };
+  /* Utilities is optional for now: Skip moves on without saving anything */
+  wireFooter(root, { onBack: () => navigateTo('A1.5'), onContinue: finishAct1, onSkip: finishAct1 });
 }
 
 registerScreen('A1.6', { type: 'working', render: renderA16 });

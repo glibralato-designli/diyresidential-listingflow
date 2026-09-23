@@ -24,6 +24,7 @@ function defaultListing() {
     role: null,
     representedByAgent: null,
     agentFollowUp: {},
+    schools: { nearby: null, elementary: '', middle: '', high: '' },
     contact: { firstName: '', lastName: '', phone: '', email: '', confirmEmail: '', prefMethod: null },
     roleDetails: {
       trustName: '',
@@ -95,7 +96,7 @@ const ACT_STEPS = {
     { id: 'A1.3', label: 'Contact & role' },
     { id: 'A1.4', label: "Your home's story" },
     { id: 'A1.5', label: 'Structure & features' },
-    { id: 'A1.6', label: 'Schools & utilities' }
+    { id: 'A1.6', label: 'Utilities' }
   ],
   2: [
     { id: 'A2.1', label: 'Service contracts' },

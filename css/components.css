@@ -734,44 +734,11 @@ select.segmented-select.has-value {
 
 select.segmented-select:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
-/* ---------- Radio list (agent representation, node 6647:109132) ---------- */
-/* Full-width bordered rows, radio dot + label. Selected = amber fill with
-   the secondary-strong border. */
-.radio-list { display: flex; flex-direction: column; gap: var(--space-xs); }
-
-.radio-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-s);
-  min-height: 44px;
-  padding: var(--space-s) var(--space-md);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--background);
-  font-size: var(--p-sm-size);
-  line-height: var(--p-sm-lh);
-  letter-spacing: var(--p-sm-tracking);
-  color: var(--foreground);
-  text-align: left;
-  width: 100%;
-}
-
-.radio-row:hover { border-color: var(--border-strong); }
-
-.radio-row .radio-dot {
-  width: 16px; height: 16px; flex-shrink: 0;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border-strong);
-  background: var(--input);
-  box-shadow: var(--shadow-xs);
-  display: flex; align-items: center; justify-content: center;
-}
-
-.radio-row.selected { background: var(--secondary-subtle); border-color: var(--secondary-strong); }
-.radio-row.selected .radio-dot { border-color: var(--secondary-strong); }
-.radio-row.selected .radio-dot::after { content: ''; width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--foreground); }
-
 .field-optional { color: var(--muted-foreground); font-weight: 400; }
+
+/* Follow-up inputs opened by a QuestionCard answer, inside the same card */
+.question-card-reveal { display: flex; flex-direction: column; gap: var(--space-md); padding-top: var(--space-md); border-top: 1px solid var(--border-muted); }
+.question-card-reveal .field-reaction.helper { padding: 0; }
 
 /* Compact yes/no table row (used for simple non-toggle rows, e.g. financial summaries) */
 .yn-row { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-s) 0; border-bottom: 1px solid var(--border-muted); }

@@ -151,6 +151,9 @@
 
 /* ---------- Footer bar ---------- */
 
+/* Skip (outline) sits beside Continue on the right */
+.footer-bar-actions { display: flex; align-items: center; gap: var(--space-s); }
+
 .footer-bar {
   height: 88px;
   flex-shrink: 0;
@@ -237,7 +240,8 @@
   .choice-grid { grid-template-columns: 1fr 1fr; }
 
   .footer-bar-inner { gap: var(--space-s); }
-  .footer-bar-inner .btn { flex: 1; }
+  .footer-bar-inner .btn, .footer-bar-actions { flex: 1; }
+  .footer-bar-actions .btn { flex: 1; }
 
   /* yn-row's label and control sit side by side on wide screens; on mobile
      the dropdown drops to its own full-width line under the label. */
