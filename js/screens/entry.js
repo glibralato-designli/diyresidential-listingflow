@@ -24,7 +24,12 @@ function dashboardMarkup() {
     </div>`;
 }
 
+/* E1 — tiles always start blank when the modal opens. Picking one selects
+   it in place (no re-render) and enables Continue; "Other" also opens a text
+   input, and Continue then waits for that text. */
 function renderE1(root) {
+  let pick = null;
+
   root.innerHTML = `
     ${dashboardMarkup()}
     <div class="modal-scrim">
@@ -32,66 +37,60 @@ function renderE1(root) {
         <button class="modal-close" id="e1-close" aria-label="Close">${icon('x')}</button>
         <p class="h4" style="margin-bottom: var(--space-xs)">What kind of property is this?</p>
         <p class="p-sm text-muted" style="margin-bottom: var(--space-xl)">We'll tailor the next few questions to your property type.</p>
-        <div class="choice-grid">
+        <div class="choice-grid" role="radiogroup" aria-label="Property type">
           ${PROPERTY_TYPES.map(t => `
-            <button class="choice-card ${t.id === 'other' && listing.propertyType === 'other' ? 'selected' : ''}" data-type="${t.id}">
+            <button class="choice-card" role="radio" aria-checked="false" data-type="${t.id}">
               ${icon(t.iconName, 36)}
               <span class="choice-label">${t.label}</span>
             </button>`).join('')}
         </div>
-        <div class="reveal ${listing.propertyType === 'other' ? 'open' : ''}" id="e1-other-reveal">
+        <div class="reveal" id="e1-other-reveal">
           <div class="field">
             <label for="e1-other-input">Tell us what kind of property it is</label>
             <input type="text" id="e1-other-input" value="${listing.propertyTypeOther || ''}" placeholder="e.g. mobile home, mixed-use building" />
           </div>
         </div>
-        ${listing.propertyType === 'other' ? `
-          <div style="display:flex; justify-content:flex-end; margin-top: var(--space-xl)">
-            <button class="btn btn-primary" id="e1-continue" ${!(listing.propertyTypeOther || '').trim() ? 'disabled' : ''}>Continue</button>
-          </div>` : ''}
+        <div class="modal-actions">
+          <button class="btn btn-primary" id="e1-continue" disabled>Continue</button>
+        </div>
       </div>
     </div>
   `;
 
-  /* PO feedback: picking a type moves on straight away; only "Other"
-     stays here to ask for the type, with Continue beside the input.
-     Tiles always start blank (only an open "Other" stays marked). */
+  const continueBtn = root.querySelector('#e1-continue');
+  const otherInput = root.querySelector('#e1-other-input');
+  const reveal = root.querySelector('#e1-other-reveal');
+  const canContinue = () => pick && (pick !== 'other' || otherInput.value.trim());
+  const sync = () => { continueBtn.disabled = !canContinue(); };
+
   root.querySelectorAll('.choice-card').forEach(card => {
     card.addEventListener('click', () => {
-      listing.propertyType = card.dataset.type;
-      saveListing();
-      if (card.dataset.type === 'other') {
-        renderApp();
-        const input = document.getElementById('e1-other-input');
-        if (input) input.focus();
-      } else {
-        navigateTo('E2');
-      }
+      pick = card.dataset.type;
+      root.querySelectorAll('.choice-card').forEach(c => {
+        const on = c === card;
+        c.classList.toggle('selected', on);
+        c.setAttribute('aria-checked', String(on));
+      });
+      reveal.classList.toggle('open', pick === 'other');
+      if (pick === 'other') otherInput.focus();
+      sync();
     });
   });
 
-  const otherInput = root.querySelector('#e1-other-input');
-  if (otherInput) {
-    otherInput.addEventListener('input', () => {
-      listing.propertyTypeOther = otherInput.value;
-      saveListing();
-      const btn = root.querySelector('#e1-continue');
-      if (btn) btn.disabled = !otherInput.value.trim();
-    });
-  }
+  otherInput.addEventListener('input', sync);
+  otherInput.addEventListener('keydown', ev => { if (ev.key === 'Enter' && canContinue()) continueBtn.click(); });
+
+  continueBtn.addEventListener('click', () => {
+    if (!canContinue()) return;
+    listing.propertyType = pick;
+    if (pick === 'other') listing.propertyTypeOther = otherInput.value.trim();
+    saveListing();
+    navigateTo('E2');
+  });
 
   root.querySelector('#e1-close').addEventListener('click', () => navigateTo('dashboard'));
   const startBtn = root.querySelector('#dashboard-start-btn');
   if (startBtn) startBtn.addEventListener('click', () => navigateTo('E1'));
-
-  const continueBtn = root.querySelector('#e1-continue');
-  if (continueBtn) {
-    continueBtn.addEventListener('click', () => {
-      if (!(listing.propertyTypeOther || '').trim()) return;
-      saveListing();
-      navigateTo('E2');
-    });
-  }
 }
 
 registerScreen('E1', { type: 'modal', render: renderE1 });

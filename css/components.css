@@ -1654,3 +1654,7 @@ body.comment-mode .comment-fab { cursor: pointer !important; }
   .address-confirm-actions, .address-confirm-actions .btn { width: 100%; }
   .address-confirm-actions .btn { flex: 1; }
 }
+
+/* E1: Continue sits bottom-right of the modal, disabled until a pick */
+.modal-actions { display: flex; justify-content: flex-end; margin-top: var(--space-xl); }
+@media (max-width: 640px) { .modal-actions .btn { width: 100%; } }
