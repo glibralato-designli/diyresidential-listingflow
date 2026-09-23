@@ -39,7 +39,7 @@ function stepIconMarkup(status) {
 /* Act rows follow the Navigation List (Figma node 6739:116629): three
    states — done (green, check, chevron-right), current (secondary, number
    badge) and upcoming (muted, number badge) — with the act's promise under
-   the current and upcoming rows. Any row expands to show its steps. */
+   every row, whatever its state. Any row expands to show its steps. */
 function actStateOf(actNum) {
   if (isActComplete(actNum)) return 'done';
   return currentAct() === actNum ? 'current' : 'upcoming';
@@ -72,7 +72,7 @@ function renderActGroup(actNum) {
         <span class="nav-act-name">${ACT_NAMES[actNum]}</span>
         <img class="nav-act-chevron" src="assets/icons/${chevron}.svg" ${chevronSize} alt="" />
       </button>
-      ${state !== 'done' ? `<p class="nav-act-promise">${ACT_PROMISES[actNum]}</p>` : ''}
+      <p class="nav-act-promise">${ACT_PROMISES[actNum]}</p>
       <div class="nav-step-list" ${expanded ? '' : 'hidden'}>${steps}</div>
     </div>`;
 }
