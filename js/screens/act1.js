@@ -36,16 +36,47 @@ function workingScreenMarkup({ eyebrow, title, description, whyLine, bodyHtml })
     </div>`;
 }
 
-function actCoverMarkup({ actNum, iconName, title, line, chips }) {
+/* Act cover — split layout from the real cover frame (node 6654:185310):
+   text column on the left (eyebrow, act number, h1, line, chips, primary
+   action), illustration filling the right. The living card sits under the
+   action so the seller sees their listing's progress at every act. */
+const ACT_COVER_ACTIONS = {
+  1: 'Start with my address',
+  2: 'Start with service contracts',
+  3: 'Start with photos',
+  4: 'Start with pricing'
+};
+
+/* Progress block under the cover's action: header + the same binary act
+   segments the Steps panel uses, then the living card in its compact
+   "List" layout so it reads as a status summary, not a second hero. */
+function actCoverProgressMarkup() {
+  const done = actSegments().filter(Boolean).length;
   return `
-    <div class="screen-fullbleed">
-      <div class="fullbleed-inner">
-        <div class="act-cover-icon">${icon(iconName, 56)}</div>
-        <div class="act-cover-number">Act ${actNum} of 4</div>
-        <p class="h2 act-cover-title">${title}</p>
-        <p class="p-reg act-cover-line">${line}</p>
-        <div class="act-cover-chips">${chips.map(c => `<span class="chip">${c}</span>`).join('')}</div>
-        <button class="btn btn-primary" id="cover-continue">Continue</button>
+    <div class="act-cover-progress">
+      <div class="act-cover-progress-header">
+        <span class="act-cover-progress-title">Your listing so far</span>
+        <span class="act-cover-progress-meta">${done} of 4 acts complete</span>
+      </div>
+      <div class="act-segments">${actSegments().map(f => `<div class="act-segment ${f ? 'filled' : ''}"></div>`).join('')}</div>
+      ${renderLivingCard({ band: true })}
+    </div>`;
+}
+
+function actCoverMarkup({ actNum, title, line, chips }) {
+  return `
+    <div class="act-cover">
+      <div class="act-cover-text">
+        <p class="act-cover-eyebrow">LISTING YOUR HOME</p>
+        <p class="act-cover-number">Act ${actNum} of 4</p>
+        <h1 class="act-cover-title">${title}</h1>
+        <p class="act-cover-line">${line}</p>
+        <div class="act-cover-chips">${chips.map(c => `<span class="badge badge-secondary">${c}</span>`).join('')}</div>
+        <button class="btn btn-primary act-cover-action" id="cover-continue">${ACT_COVER_ACTIONS[actNum]}</button>
+        ${actCoverProgressMarkup()}
+      </div>
+      <div class="act-cover-art">
+        <div class="act-cover-art-inner"><img src="assets/images/act-${actNum}-cover.webp" width="1024" height="1024" alt="" /></div>
       </div>
     </div>`;
 }

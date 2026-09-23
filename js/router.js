@@ -7,13 +7,15 @@ function registerScreen(id, def) {
   SCREENS[id] = def;
 }
 
+/* Routes are plain "#A1.2" tokens (the only hash form an Artifact link
+   passes through); the older "#/A1.2" form still resolves. */
 function navigateTo(id) {
-  if (location.hash === '#/' + id) { renderApp(); return; }
-  location.hash = '#/' + id;
+  if (currentScreenId() === id && location.hash) { renderApp(); return; }
+  location.hash = '#' + id;
 }
 
 function currentScreenId() {
-  const h = location.hash.replace(/^#\//, '');
+  const h = location.hash.replace(/^#\/?/, '');
   return h || 'E1';
 }
 
@@ -44,10 +46,12 @@ function renderApp() {
   refreshIcons();
   enhanceToggleGroups(root);
   window.scrollTo(0, 0);
+  refreshCommentPins();
 }
 
 function initApp() {
   initNavOverlay();
   window.addEventListener('hashchange', renderApp);
   renderApp();
+  initComments();
 }

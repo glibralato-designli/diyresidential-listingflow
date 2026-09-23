@@ -10,7 +10,7 @@ registerScreen('A3.0', {
       iconName: 'camera',
       title: ACT_NAMES[3],
       line: ACT_PROMISES[3],
-      chips: ['Photos', 'Video', 'Floor plan']
+      chips: ['Photos', 'Media', 'Listing story']
     });
     root.querySelector('#cover-continue').addEventListener('click', () => navigateTo('A3.1'));
   }

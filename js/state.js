@@ -71,7 +71,7 @@ function deepMerge(base, override) {
 }
 
 function saveListing() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(listing));
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(listing)); } catch (e) { /* storage blocked: keep in memory */ }
 }
 
 function resetListing() {

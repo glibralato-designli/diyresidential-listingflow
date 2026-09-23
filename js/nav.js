@@ -5,9 +5,9 @@
 
 const ACT_PROMISES = {
   1: "We'll start with the basics. Most of this we can fill in for you.",
-  2: "This part is required by Tennessee law. You don't have to know everything.",
-  3: "Photos are what buyers look at first. We'll walk you through it.",
-  4: 'Not sure what to charge? No need to worry — we\'ll do the numbers'
+  2: 'Not sure what matters? We’ll guide you through disclosures, services, and closing details.',
+  3: 'Not sure what to feature? We’ll help your home look clear and inviting.',
+  4: 'Not sure where to start? We’ll help you price, review, and publish confidently.'
 };
 
 let navOverlayExpanded = new Set();

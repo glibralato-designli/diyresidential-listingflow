@@ -325,8 +325,8 @@
 .listing-card-stat.ghost { border-style: dashed; background: var(--background); }
 
 /* Narrow cards (rail, comparables, milestones) keep the stat row on one line */
-.zone-rail .listing-card-stats, .comparable-row .listing-card-stats, .milestone-card .listing-card-stats { gap: 6px; }
-.zone-rail .listing-card-stat, .comparable-row .listing-card-stat, .milestone-card .listing-card-stat { padding: 6px; gap: 4px; font-size: var(--p-mini-size); line-height: var(--p-mini-lh); letter-spacing: var(--p-mini-tracking); }
+.zone-rail .listing-card-stats, .comparable-row .listing-card-stats, .milestone-card .listing-card-stats, .act-cover-progress .listing-card-stats { gap: 6px; }
+.zone-rail .listing-card-stat, .comparable-row .listing-card-stat, .milestone-card .listing-card-stat, .act-cover-progress .listing-card-stat { padding: 6px; gap: 4px; font-size: var(--p-mini-size); line-height: var(--p-mini-lh); letter-spacing: var(--p-mini-tracking); }
 
 /* 16px icon slot; bed/bath SVGs are stored flipped in the source file and
    the component flips them back (rotate 180 + scaleX -1 = scaleY -1). */
@@ -374,14 +374,126 @@
   .listing-card.band .listing-card-stat { padding: 4px 6px; font-size: var(--p-mini-size); line-height: var(--p-mini-lh); }
 }
 
-/* ---------- Act cover / milestone ---------- */
+/* ---------- Act cover (node 6654:185310) ---------- */
+
+.act-cover {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 600px) minmax(0, 1fr);
+  min-height: calc(100vh - 76px);
+}
+
+.act-cover-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-5xl) 56px var(--space-5xl) var(--space-5xl);
+}
+
+.act-cover-eyebrow {
+  font-size: var(--p-mini-size);
+  line-height: var(--p-mini-lh);
+  letter-spacing: var(--p-mini-tracking);
+  font-weight: 700;
+  color: var(--secondary-strong);
+  margin-bottom: var(--space-md);
+}
+
+.act-cover-text .act-cover-number {
+  font-size: var(--p-sm-size);
+  line-height: var(--p-sm-lh);
+  letter-spacing: var(--p-sm-tracking);
+  font-weight: 400;
+  color: var(--muted-foreground);
+  margin-bottom: var(--space-xs);
+}
+
+.act-cover-title {
+  margin: 0 0 var(--space-md);
+  font-size: var(--h1-size);
+  line-height: var(--h1-lh);
+  letter-spacing: var(--h1-tracking);
+  font-weight: 700;
+  color: #000;
+}
+
+.act-cover-text .act-cover-line {
+  font-size: var(--p-sm-size);
+  line-height: var(--p-sm-lh);
+  letter-spacing: var(--p-sm-tracking);
+  color: var(--muted-foreground);
+  margin-bottom: var(--space-xl);
+}
+
+.act-cover-chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-bottom: 48px; }
+.act-cover-chips .badge { padding: 3px var(--space-xs); min-height: 24px; letter-spacing: var(--p-mini-tracking); }
+
+.act-cover-progress {
+  width: 100%;
+  max-width: 472px;
+  margin-top: 48px;
+  padding-top: var(--space-xl);
+  border-top: 1px solid var(--border-muted);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+}
+
+.act-cover-progress-header { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-xs); }
+.act-cover-progress-title { font-size: var(--p-sm-size); line-height: var(--p-sm-lh); letter-spacing: var(--p-sm-tracking); font-weight: 700; color: var(--foreground); }
+.act-cover-progress-meta { font-size: var(--p-mini-size); line-height: var(--p-mini-lh); letter-spacing: var(--p-mini-tracking); color: var(--muted-foreground); }
+.act-cover-progress .act-segments { margin-bottom: var(--space-xs); }
+
+/* Compact List card on the cover */
+.act-cover-progress .listing-card.band { padding: var(--space-s); gap: var(--space-md); }
+.act-cover-progress .listing-card.band .listing-card-image { width: 152px; max-width: none; min-height: 120px; font-size: var(--p-mini-size); }
+.act-cover-progress .listing-card-title { font-size: var(--h4-size); line-height: var(--h4-lh); letter-spacing: 0; }
+.act-cover-progress .listing-card-address { font-size: var(--p-sm-size); line-height: var(--p-sm-lh); }
+.act-cover-progress .listing-card-heading { gap: var(--space-3xs); }
+.act-cover-progress .listing-card-content { gap: var(--space-s); }
+.act-cover-progress .listing-card-stats { padding-top: var(--space-s); }
+
+.act-cover-art { position: relative; background: #f2f1ec; }
+
+/* Illustration stays in view while the text column scrolls. The act images
+   are transparent PNG cut-outs, so every act shares this one panel colour. */
+.act-cover-art-inner {
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 76px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl);
+}
+
+.act-cover-art img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+@media (max-width: 1023px) {
+  .act-cover { grid-template-columns: 1fr; min-height: 0; }
+  .act-cover-art { order: -1; }
+  .act-cover-art-inner { position: static; height: 320px; padding: var(--space-md); }
+  .act-cover-text { padding: var(--space-2xl) var(--space-md) var(--space-3xl); }
+  .act-cover-title { font-size: var(--h2-size); line-height: var(--h2-lh); }
+  .act-cover-chips { margin-bottom: var(--space-xl); }
+  .act-cover-text { justify-content: flex-start; }
+  .act-cover-progress { margin-top: var(--space-2xl); max-width: none; }
+  .act-cover-progress .listing-card.band .listing-card-image { width: 84px; min-height: 96px; }
+}
+
+/* ---------- Milestone (full-bleed, centred) ---------- */
 
 .act-cover-number { font-size: var(--p-sm-size); line-height: var(--p-sm-lh); letter-spacing: var(--p-sm-tracking); font-weight: 700; color: var(--secondary-strong); margin-bottom: var(--space-xs); }
 .act-cover-icon { margin-bottom: var(--space-lg); color: var(--secondary-foreground); }
 .act-cover-icon svg { width: 56px; height: 56px; stroke-width: 1.2; }
-.act-cover-title { margin-bottom: var(--space-md); }
 .act-cover-line { color: var(--foreground-alt); margin-bottom: var(--space-xl); }
-.act-cover-chips { display: flex; gap: var(--space-xs); justify-content: center; margin-bottom: var(--space-2xl); flex-wrap: wrap; }
 
 /* ---------- Why-line component, 4 variants ---------- */
 
@@ -936,4 +1048,37 @@ input[type="checkbox"]:disabled { opacity: 0.5; cursor: not-allowed; }
   .checkbox-grid { grid-template-columns: 1fr; }
   .card { padding: var(--space-md); }
   .question-card { padding: var(--space-md); }
+}
+
+/* ---------- Comments (Artifact only, js/comments.js) ---------- */
+
+.comment-fab {
+  position: fixed;
+  right: var(--space-xl);
+  bottom: calc(var(--space-xl) + env(safe-area-inset-bottom, 0px));
+  z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  height: var(--button-lg);
+  padding: 0 var(--space-md);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: var(--p-sm-size);
+  font-weight: 700;
+  box-shadow: 0 10px 15px -3px #0000001a, 0 4px 6px -4px #0000001a;
+}
+
+.comment-fab:hover { background: var(--background-subtle); }
+.comment-fab.active { background: var(--foreground); color: var(--background); border-color: var(--foreground); }
+.comment-fab:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+body.comment-mode, body.comment-mode * { cursor: crosshair !important; }
+body.comment-mode .comment-fab { cursor: pointer !important; }
+.comment-hover { outline: 2px solid var(--secondary-strong) !important; outline-offset: 2px; }
+
+@media (max-width: 640px) {
+  .comment-fab { right: var(--space-md); bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
 }

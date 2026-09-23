@@ -10,8 +10,8 @@ registerScreen('A4.0', {
       actNum: 4,
       iconName: 'calculator',
       title: ACT_NAMES[4],
-      line: capWords(ACT_PROMISES[4] + ' with you', 14),
-      chips: ['Pricing', 'Ownership', 'Publish']
+      line: ACT_PROMISES[4],
+      chips: ['Valuation', 'Review', 'Publish']
     });
     root.querySelector('#cover-continue').addEventListener('click', () => navigateTo('A4.1'));
   }

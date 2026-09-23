@@ -8,7 +8,7 @@ registerScreen('A2.0', {
       iconName: 'newspaper',
       title: ACT_NAMES[2],
       line: ACT_PROMISES[2],
-      chips: ['Service contracts', 'Property condition', 'Closing details']
+      chips: ['Disclosures', 'Service contracts', 'Financial details']
     });
     root.querySelector('#cover-continue').addEventListener('click', () => navigateTo('A2.1'));
   }
