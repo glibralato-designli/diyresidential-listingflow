@@ -91,7 +91,6 @@ function renderNavOverlayContent() {
     ${[1, 2, 3, 4].map(renderActGroup).join('')}
     <div class="nav-overlay-footer">
       <a href="#/preview" class="nav-footer-link">Preview</a>
-      <a href="#/dashboard" class="nav-footer-link">Save &amp; Exit</a>
     </div>
   `;
   refreshIcons();
