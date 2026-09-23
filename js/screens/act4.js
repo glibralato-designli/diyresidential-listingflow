@@ -74,12 +74,13 @@ function renderA41(root) {
     <div class="field">
       <label>Comparable Properties</label>
       <div class="comparable-carousel">
-        ${iconButtonMarkup('arrow-left', 'Previous comparables', 'data-comp-go="-1"')}
-        <div class="comparable-row" id="comparable-row">
+        <div class="comparable-row" id="comparable-row" tabindex="0" aria-label="Comparable properties">
           ${COMPARABLES.map(comparableCardMarkup).join('')}
         </div>
+        ${iconButtonMarkup('arrow-left', 'Previous comparables', 'data-comp-go="-1"')}
         ${iconButtonMarkup('arrow-right', 'More comparables', 'data-comp-go="1"')}
       </div>
+      <div class="comparable-dots" id="comparable-dots"></div>
     </div>
 
     <div class="card" style="display:flex; flex-direction:column; gap:var(--space-xl);">
@@ -124,20 +125,44 @@ function renderA41(root) {
     bodyHtml: body
   }) + footerBarMarkup('Back', 'Save and Continue', false);
 
-  /* Side arrows page the comparables row one card at a time */
+  /* Arrows sit over the images and page the row one card at a time; each
+     disables at its end. Dots show the position and jump to a card. */
   const row = root.querySelector('#comparable-row');
   const arrows = root.querySelectorAll('[data-comp-go]');
-  const syncArrows = () => {
+  const dots = root.querySelector('#comparable-dots');
+  const step = () => {
+    const card = row.querySelector('.listing-card');
+    return card ? card.offsetWidth + 16 : row.clientWidth;
+  };
+  const pageCount = () => Math.max(1, Math.round((row.scrollWidth - row.clientWidth) / step()) + 1);
+  const syncCarousel = () => {
+    const max = row.scrollWidth - row.clientWidth;
     arrows[0].disabled = row.scrollLeft <= 2;
-    arrows[1].disabled = row.scrollLeft + row.clientWidth >= row.scrollWidth - 2;
+    arrows[1].disabled = row.scrollLeft >= max - 2;
+    const n = pageCount();
+    if (dots.children.length !== n) {
+      dots.innerHTML = Array.from({ length: n }, (_, i) => `<button type="button" aria-label="Go to comparable ${i + 1}" data-comp-dot="${i}"></button>`).join('');
+      dots.hidden = n < 2;
+    }
+    const current = row.scrollLeft >= max - 2 ? n - 1 : Math.round(row.scrollLeft / step());
+    Array.from(dots.children).forEach((d, i) => d.classList.toggle('active', i === current));
   };
   arrows.forEach(btn => btn.addEventListener('click', () => {
-    const card = row.querySelector('.listing-card');
-    const step = card ? card.offsetWidth + 16 : row.clientWidth;
-    row.scrollBy({ left: Number(btn.dataset.compGo) * step, behavior: 'smooth' });
+    row.scrollBy({ left: Number(btn.dataset.compGo) * step(), behavior: 'smooth' });
   }));
-  row.addEventListener('scroll', syncArrows, { passive: true });
-  requestAnimationFrame(syncArrows);
+  dots.addEventListener('click', e => {
+    const dot = e.target.closest('[data-comp-dot]');
+    if (dot) row.scrollTo({ left: Number(dot.dataset.compDot) * step(), behavior: 'smooth' });
+  });
+  row.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      row.scrollBy({ left: (e.key === 'ArrowRight' ? 1 : -1) * step(), behavior: 'smooth' });
+    }
+  });
+  row.addEventListener('scroll', syncCarousel, { passive: true });
+  new ResizeObserver(syncCarousel).observe(row);
+  requestAnimationFrame(syncCarousel);
 
   root.querySelector('#price-input').addEventListener('input', e => {
     listing.price = Number(e.target.value) || 0;

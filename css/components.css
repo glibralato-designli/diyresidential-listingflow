@@ -1234,10 +1234,30 @@ input[type="checkbox"]:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ---------- Comparables carousel (A4.1) ---------- */
 
-.comparable-carousel { display: flex; align-items: center; gap: var(--space-s); min-width: 0; }
-.comparable-carousel .comparable-row { flex: 1; scroll-snap-type: x mandatory; scrollbar-width: none; }
+/* Arrows float over the card images (vertically centred on them) */
+.comparable-carousel { position: relative; min-width: 0; }
+.comparable-carousel .comparable-row { scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; padding: 4px 0 8px; }
 .comparable-carousel .comparable-row::-webkit-scrollbar { display: none; }
-.comparable-carousel .listing-card { scroll-snap-align: start; }
+.comparable-carousel .comparable-row:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-3xl); }
+.comparable-carousel .listing-card { scroll-snap-align: start; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.comparable-carousel .listing-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); }
+.comparable-carousel [data-comp-go] {
+  position: absolute; top: 92px; z-index: 2;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 12px -2px #0f172a26;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+.comparable-carousel [data-comp-go="-1"] { left: var(--space-s); }
+.comparable-carousel [data-comp-go="1"] { right: var(--space-s); }
+.comparable-carousel [data-comp-go]:not(:disabled):hover { transform: scale(1.06); }
+.comparable-carousel [data-comp-go]:disabled { opacity: 0.45; cursor: default; box-shadow: none; }
+.comparable-dots { display: flex; justify-content: center; gap: 6px; margin-top: var(--space-s); }
+.comparable-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: var(--radius-full); background: var(--border-strong); transition: width 0.25s ease, background 0.25s ease; }
+.comparable-dots button.active { width: 24px; background: var(--secondary-strong); }
+@media (prefers-reduced-motion: reduce) {
+  .comparable-carousel .comparable-row { scroll-behavior: auto; }
+  .comparable-carousel .listing-card, .comparable-carousel [data-comp-go], .comparable-dots button { transition: none; }
+}
 
 /* ---------- Mobile overrides (must follow the base component rules) ---------- */
 
@@ -1246,7 +1266,6 @@ input[type="checkbox"]:disabled { opacity: 0.5; cursor: not-allowed; }
   .defect-stage .icon-button { min-width: 36px; min-height: 36px; padding: 8px; }
   .defect-answer { min-width: 0; flex: 1; padding: 0 var(--space-md); }
   .defect-answers { width: 100%; flex-wrap: nowrap; }
-  .comparable-carousel .icon-button { display: none; }
   .field-grid, .field-grid.dense, .hd-row-3 { grid-template-columns: 1fr; gap: var(--space-xl); }
   .hd-overall-row > span:first-child { display: none; }
   /* Short option labels: two columns still fit at phone width */
