@@ -11,6 +11,7 @@ function defaultListing() {
     address: {
       line1: '', line2: '', city: '', state: '', zip: '',
       resolved: false,
+      locationConfirmed: false,
       prefill: {
         sqft: 2450, lotSize: 3500, yearBuilt: 1998,
         beds: 3, baths: 2, garage: 2,

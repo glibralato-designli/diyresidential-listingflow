@@ -247,6 +247,102 @@ const ADDRESS_SUGGESTIONS = [
   { line1: '42 County Road 8', city: 'Pikeville', state: 'TN', zip: '37367', hasRecords: false }
 ];
 
+/* Address confirmation map (Figma node 5663:54467; confirm-the-pin step
+   modelled on the Mobbin address-validation flow). The pin stays centred;
+   the seller drags the map under it or zooms, then confirms. The map is a
+   static street image, so the offset is kept for the session only. */
+let addressMapView = { x: 0, y: 0, zoom: 1 };
+
+function addressMapMarkup(a) {
+  const v = addressMapView;
+  return `
+    <div class="address-map${a.locationConfirmed ? ' is-confirmed' : ''}" id="address-map">
+      <div class="address-map-canvas" style="transform: translate(${v.x}px, ${v.y}px) scale(${v.zoom})">
+        <img src="assets/images/address-map.webp" alt="" draggable="false" />
+      </div>
+      <img class="address-map-pin" src="assets/icons/map-pin-li.svg" width="40" height="40" alt="" />
+      <div class="address-map-zoom">
+        <button type="button" class="address-map-zoom-btn" data-map-zoom="1" aria-label="Zoom in">${icon('plus', 20)}</button>
+        <button type="button" class="address-map-zoom-btn" data-map-zoom="-1" aria-label="Zoom out">${icon('minus', 20)}</button>
+      </div>
+      <div class="address-map-card">
+        <p class="address-map-eyebrow">${a.locationConfirmed ? `${icon('check', 14)} Location confirmed` : 'Your property'}</p>
+        <p class="address-map-title">${a.line1}</p>
+        <p class="address-map-sub">${a.city}, ${a.state} ${a.zip}</p>
+      </div>
+    </div>
+    ${a.locationConfirmed ? `
+      <div class="address-confirm is-done">
+        <p class="p-sm text-muted">Not quite right?</p>
+        <div class="address-confirm-actions">
+          <button type="button" class="btn btn-sm btn-outline" id="addr-adjust">${icon('move', 14)} Adjust pin</button>
+          <button type="button" class="btn btn-sm btn-outline" id="addr-change">${icon('pencil', 14)} Change address</button>
+        </div>
+      </div>` : `
+      <div class="address-confirm">
+        <div>
+          <p class="address-confirm-title">Is the pin on your home?</p>
+          <p class="p-sm text-muted">Drag the map to move it under the pin if it's off, then confirm.</p>
+        </div>
+        <div class="address-confirm-actions">
+          <button type="button" class="btn btn-primary" id="addr-confirm">Yes, that's my home</button>
+          <button type="button" class="btn btn-outline" id="addr-change">Change address</button>
+        </div>
+      </div>`}`;
+}
+
+function wireAddressMap(root, a) {
+  const map = root.querySelector('#address-map');
+  if (!map) return;
+  const canvas = map.querySelector('.address-map-canvas');
+  const apply = () => { canvas.style.transform = `translate(${addressMapView.x}px, ${addressMapView.y}px) scale(${addressMapView.zoom})`; };
+  const limit = () => {
+    const maxX = map.clientWidth * 0.5 * addressMapView.zoom;
+    const maxY = map.clientHeight * 0.5 * addressMapView.zoom;
+    addressMapView.x = Math.max(-maxX, Math.min(maxX, addressMapView.x));
+    addressMapView.y = Math.max(-maxY, Math.min(maxY, addressMapView.y));
+  };
+
+  map.querySelectorAll('[data-map-zoom]').forEach(btn => btn.addEventListener('click', ev => {
+    ev.stopPropagation();
+    addressMapView.zoom = Math.max(1, Math.min(2.5, addressMapView.zoom + Number(btn.dataset.mapZoom) * 0.25));
+    limit(); apply();
+  }));
+
+  /* Drag to move the map under the pin — only while the pin isn't confirmed */
+  let drag = null;
+  map.addEventListener('pointerdown', ev => {
+    if (a.locationConfirmed || ev.target.closest('button')) return;
+    drag = { x: ev.clientX - addressMapView.x, y: ev.clientY - addressMapView.y };
+    map.setPointerCapture(ev.pointerId);
+    map.classList.add('is-dragging');
+  });
+  map.addEventListener('pointermove', ev => {
+    if (!drag) return;
+    addressMapView.x = ev.clientX - drag.x;
+    addressMapView.y = ev.clientY - drag.y;
+    limit(); apply();
+  });
+  const end = () => { drag = null; map.classList.remove('is-dragging'); };
+  map.addEventListener('pointerup', end);
+  map.addEventListener('pointercancel', end);
+
+  const confirmBtn = root.querySelector('#addr-confirm');
+  if (confirmBtn) confirmBtn.addEventListener('click', () => { a.locationConfirmed = true; saveListing(); renderApp(); });
+  const adjustBtn = root.querySelector('#addr-adjust');
+  if (adjustBtn) adjustBtn.addEventListener('click', () => { a.locationConfirmed = false; saveListing(); renderApp(); });
+  const changeBtn = root.querySelector('#addr-change');
+  if (changeBtn) changeBtn.addEventListener('click', () => {
+    Object.assign(a, { line1: '', city: '', state: '', zip: '', resolved: false, locationConfirmed: false });
+    a.prefill.confirmed = {};
+    addressMapView = { x: 0, y: 0, zoom: 1 };
+    saveListing();
+    renderApp();
+    const input = document.getElementById('addr-input');
+    if (input) input.focus();
+  });
+}
+
 function renderA11(root) {
   const a = listing.address;
   const confirmState = a.prefill.confirmed.sqft || 'unconfirmed';
@@ -295,14 +391,8 @@ function renderA11(root) {
       <div id="addr-suggestions"></div>
     </div>
     ${a.resolved ? `
-      <div class="card" style="padding: var(--space-md); display:flex; gap: var(--space-md); align-items:center;">
-        <div style="width:96px;height:72px;border-radius:var(--radius-lg);background:var(--background-subtle);display:flex;align-items:center;justify-content:center;color:var(--muted-foreground);flex-shrink:0;">${icon('map-pin')}</div>
-        <div>
-          <p class="p-sm font-semibold">${a.line1}</p>
-          <p class="p-sm text-muted">${a.city}, ${a.state} ${a.zip}</p>
-        </div>
-      </div>
-      ${prefillBox()}
+      ${addressMapMarkup(a)}
+      ${a.locationConfirmed ? prefillBox() : ''}
     ` : ''}
     ${schoolsQuestionMarkup()}
     ${agentQuestionMarkup()}
@@ -314,7 +404,7 @@ function renderA11(root) {
     title: "What's the property address?",
     description: "We'll pull in what public records already know, so you don't have to type it twice.",
     bodyHtml: body
-  }) + footerBarMarkup('Back', 'Continue', !a.resolved);
+  }) + footerBarMarkup('Back', 'Continue', !(a.resolved && a.locationConfirmed));
 
   const input = root.querySelector('#addr-input');
   const suggBox = root.querySelector('#addr-suggestions');
@@ -337,6 +427,8 @@ function renderA11(root) {
         listing.address.state = s.state;
         listing.address.zip = s.zip;
         listing.address.resolved = true;
+        listing.address.locationConfirmed = false;
+        addressMapView = { x: 0, y: 0, zoom: 1 };
         listing.address.prefill.none = !s.hasRecords;
         if (s.hasRecords) listing.address.prefill.confirmed.sqft = 'unconfirmed';
         saveListing();
@@ -344,6 +436,8 @@ function renderA11(root) {
       });
     });
   });
+
+  wireAddressMap(root, a);
 
   const yesBtn = root.querySelector('#prefill-yes');
   if (yesBtn) yesBtn.addEventListener('click', () => { a.prefill.confirmed.sqft = 'confirmed'; saveListing(); renderApp(); });
