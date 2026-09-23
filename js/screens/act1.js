@@ -130,7 +130,7 @@ function actCoverMarkup({ actNum, title, line, chips }) {
         ${actCoverProgressMarkup()}
       </div>
       <div class="act-cover-art">
-        <div class="act-cover-art-inner"><img src="assets/images/act-${actNum}-cover.webp" width="1024" height="1024" alt="" /></div>
+        <div class="act-cover-art-inner"><img src="assets/images/act-${actNum}-cover.webp" width="1024" height="1024" alt="" fetchpriority="high" decoding="async" onload="this.classList.add('is-loaded')" /></div>
       </div>
     </div>`;
 }

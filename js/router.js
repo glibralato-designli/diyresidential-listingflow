@@ -54,6 +54,7 @@ function renderApp() {
   refreshIcons();
   enhanceToggleGroups(root);
   window.scrollTo(0, sameScreen ? keepY : 0);
+  root.querySelectorAll('.act-cover-art img').forEach(img => { if (img.complete) img.classList.add('is-loaded'); });
   refreshCommentPins();
 }
 
@@ -62,4 +63,7 @@ function initApp() {
   window.addEventListener('hashchange', renderApp);
   renderApp();
   initComments();
+  /* Warm the act cover illustrations so each cover paints straight away */
+  const warm = () => [1, 2, 3, 4].forEach(n => { const img = new Image(); img.src = `assets/images/act-${n}-cover.webp`; });
+  if ('requestIdleCallback' in window) requestIdleCallback(warm); else setTimeout(warm, 1200);
 }
