@@ -15,7 +15,6 @@
    are inert here. Seller controls (edit a step, finish) sit in a bar above
    the mockup so the page itself stays buyer-pure. */
 
-const PREVIEW_TIERS = VALUATION_TIERS;
 
 function allPhotos() {
   const out = [];
@@ -153,8 +152,8 @@ function lpSchools() {
 }
 
 function lpEstimatedValue() {
-  const lo = PREVIEW_TIERS[0].value;
-  const hi = PREVIEW_TIERS[PREVIEW_TIERS.length - 1].value;
+  const lo = VALUATION_TIERS[0].value;
+  const hi = VALUATION_TIERS[VALUATION_TIERS.length - 1].value;
   const base = lo - (hi - lo); // bars start below the range so their differences read
   return `
     <section class="lp-section">
@@ -166,7 +165,7 @@ function lpEstimatedValue() {
         </div>
       </div>
       <div class="lp-card lp-values">
-        ${PREVIEW_TIERS.map(t => `
+        ${VALUATION_TIERS.map(t => `
           <div class="lp-value-row${t.suggested ? ' is-suggested' : ''}">
             <span class="lp-value-label">${t.label}</span>
             <span class="lp-value-bar"><span style="width:${Math.round(((t.value - base) / (hi - base)) * 100)}%"></span></span>

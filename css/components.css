@@ -194,7 +194,7 @@
 
 .nav-act-promise { font-size: var(--p-mini-size); line-height: var(--p-mini-lh); letter-spacing: var(--p-mini-tracking); color: var(--muted-foreground); }
 
-.nav-step-list { display: flex; flex-direction: column; gap: var(--space-3xs); padding-left: var(--space-xs); margin-top: calc(var(--space-xs) * -1); }
+.nav-step-list { display: flex; flex-direction: column; gap: var(--space-3xs); padding-left: var(--space-xs); margin: calc(var(--space-xs) * -1) 0 calc(var(--space-3xs) * -1); }
 
 .nav-step-row {
   display: flex;
@@ -1405,7 +1405,9 @@ body.comment-mode .comment-fab { cursor: pointer !important; }
   .screen-fullbleed.has-top-back { flex-direction: column; align-items: stretch; padding-top: var(--space-md); }
   .screen-fullbleed.has-top-back > .top-back { position: static; margin-bottom: var(--space-xl); }
 }
-.nav-act-group:last-of-type { margin-bottom: var(--space-xl); }
+/* Room between the last act and the panel footer */
+.nav-overlay-footer { margin-top: auto; padding-bottom: var(--space-md); }
+.nav-act-group:has(+ .nav-overlay-footer) { margin-bottom: var(--space-2xl); }
 
 /* Checkpoint modal: roomier inside than the inline achievement header */
 .checkpoint-card .achievement { padding: var(--space-3xl) var(--space-2xl); gap: var(--space-lg); }
