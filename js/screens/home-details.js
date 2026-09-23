@@ -351,7 +351,8 @@ function renderA15(root) {
     homeDetailsTab = id;
     renderApp();
     const head = document.querySelector('.hd-head');
-    if (head && head.getBoundingClientRect().top < 0) head.scrollIntoView({ block: 'start' });
+    /* Stuck under the header: bring the new tab's first question into view */
+    if (head && head.parentElement.getBoundingClientRect().top < head.getBoundingClientRect().top - 1) head.scrollIntoView({ block: 'start' });
   };
   const wireTabs = scope => scope.querySelectorAll('[data-hd-tab], [data-hd-go]').forEach(btn => {
     btn.addEventListener('click', () => goTab(btn.dataset.hdTab || btn.dataset.hdGo));

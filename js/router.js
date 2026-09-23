@@ -41,6 +41,7 @@ function renderApp() {
   document.body.dataset.screenType = screen.type;
   const stepsTrigger = document.getElementById('steps-trigger');
   stepsTrigger.hidden = !(screen.type === 'working' || screen.type === 'preview');
+  document.getElementById('save-exit').hidden = stepsTrigger.hidden;
 
   /* Re-rendering the same screen (a toggle click, a checkbox) keeps the
      reader's place; only a real navigation starts at the top. */

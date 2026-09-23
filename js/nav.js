@@ -111,4 +111,5 @@ function initNavOverlay() {
   document.getElementById('nav-overlay-scrim').addEventListener('click', closeNavOverlay);
   document.getElementById('nav-overlay-close').addEventListener('click', closeNavOverlay);
   document.getElementById('steps-trigger').addEventListener('click', openNavOverlay);
+  document.getElementById('save-exit').addEventListener('click', () => navigateTo('dashboard'));
 }

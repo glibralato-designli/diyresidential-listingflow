@@ -15,13 +15,20 @@
 <body>
 
 <div class="app-shell">
+  <!-- Header (Figma node 6739:116855): Steps left, logo centred, Save & Exit right -->
   <div class="nav-bar">
-    <div class="brand">DIY Residential</div>
-    <div class="nav-actions">
-      <button class="steps-trigger" id="steps-trigger" hidden>
-        <span data-lucide="menu" class="icon" style="width:16px;height:16px"></span>
+    <div class="nav-slot nav-slot-start">
+      <button class="nav-pill" id="steps-trigger" hidden>
+        <span data-lucide="text-align-start" class="icon" style="width:16px;height:16px"></span>
         Steps
       </button>
+    </div>
+    <a class="brand" href="#dashboard" aria-label="DIY Residential home">
+      <img src="assets/icons/logo-symbol.svg" width="25.667" height="25.667" alt="" class="brand-symbol" />
+      <span>DIY Residential</span>
+    </a>
+    <div class="nav-slot nav-slot-end">
+      <button class="nav-pill" id="save-exit" hidden>Save &amp; Exit</button>
     </div>
   </div>
 

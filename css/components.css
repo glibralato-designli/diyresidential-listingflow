@@ -1054,7 +1054,7 @@ input[type="checkbox"]:disabled { opacity: 0.5; cursor: not-allowed; }
 /* Sticky head: overall answered bar + the horizontal tab strip */
 .hd-head {
   position: sticky;
-  top: 0;
+  top: var(--header-h);
   z-index: 5;
   background: var(--background);
   display: flex;
