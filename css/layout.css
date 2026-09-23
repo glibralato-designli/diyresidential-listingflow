@@ -1,5 +1,8 @@
 /* ---------- App shell ---------- */
 
+/* Content column width and side gutter, shared by the form and the footer bar */
+:root { --content-max: 1200px; --page-gutter: var(--space-5xl); }
+
 .app-shell {
   min-height: 100vh;
   display: flex;
@@ -79,19 +82,19 @@
 }
 
 .main-split-container {
-  max-width: 1160px;
+  max-width: calc(var(--content-max) + var(--page-gutter) * 2);
   width: 100%;
   margin: 0 auto;
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: var(--space-3xl) var(--space-2xl) 0;
+  padding: var(--space-3xl) var(--page-gutter) 0;
 }
 
 /* Screen header — confirmed from the real wizard header (node 5663:54551):
    amber-strong bold eyebrow, h3 title, small muted description, 8px apart. */
 .screen-text-block {
-  max-width: 936px;
+  max-width: var(--content-max);
   margin: 0 auto var(--space-2xl);
   width: 100%;
   display: flex;
@@ -123,11 +126,11 @@
 }
 
 .split-zones {
-  max-width: 936px;
+  max-width: var(--content-max);
   width: 100%;
   margin: 0 auto;
   display: flex;
-  gap: var(--space-2xl);
+  gap: var(--space-3xl);
   align-items: flex-start;
 }
 
@@ -140,14 +143,14 @@
 }
 
 .zone-rail {
-  width: 304px;
+  width: 336px;
   flex-shrink: 0;
   position: sticky;
   top: var(--space-2xl);
 }
 
 /* Working screens with no rail (e.g. dense screens that don't need it hidden) still reserve the split */
-.split-zones.no-rail .zone-content { max-width: 616px; }
+.split-zones.no-rail .zone-content { max-width: 864px; }
 
 /* ---------- Footer bar ---------- */
 
@@ -162,13 +165,13 @@
 }
 
 .footer-bar-inner {
-  max-width: 1160px;
+  max-width: calc(var(--content-max) + var(--page-gutter) * 2);
   margin: 0 auto;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--space-2xl);
+  padding: 0 var(--page-gutter);
 }
 
 /* ---------- Nav overlay (act-scoped steps, opened from the nav bar) ---------- */
@@ -226,10 +229,20 @@
   .living-card-band { display: block; margin-bottom: var(--space-xl); }
 }
 
+/* Laptops: the form runs the full width of the screen with a smaller gutter */
+@media (max-width: 1439px) {
+  :root { --page-gutter: var(--space-3xl); }
+}
+
+@media (max-width: 1023px) {
+  .nav-bar { padding: 0 var(--space-2xl); }
+  :root { --page-gutter: var(--space-2xl); }
+}
+
 @media (max-width: 640px) {
   .nav-bar { padding: 0 var(--space-md); }
-  .main-split-container { padding: var(--space-xl) var(--space-md) 0; }
-  .footer-bar-inner { padding: 0 var(--space-md); }
+  :root { --page-gutter: var(--space-md); }
+  .main-split-container { padding-top: var(--space-xl); }
   .nav-overlay-panel { width: 88vw; }
 
   /* Two-column form grids stack. Toggle groups never stack here — they

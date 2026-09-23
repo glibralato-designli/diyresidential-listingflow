@@ -70,6 +70,16 @@ function milestoneMarkup({ title, description, action, id = 'milestone-continue'
     </div>`;
 }
 
+/* Form section: a bordered block grouping the questions under one small
+   uppercase heading (same border and radius as the QuestionCard). */
+function formSectionMarkup(heading, innerHtml) {
+  return `
+    <section class="form-section">
+      ${heading ? `<p class="section-label">${heading}</p>` : ''}
+      ${innerHtml}
+    </section>`;
+}
+
 /* Icon Button, Outline / Large (Figma node 13:762) */
 function iconButtonMarkup(iconName, label, attrs = '') {
   return `<button type="button" class="icon-button" aria-label="${label}" ${attrs}>${icon(iconName, 20)}</button>`;
@@ -168,21 +178,31 @@ const AGENT_FOLLOW_UPS = {
 
 /* QuestionCard + Toggle Group — the pattern every yes/no-style question in
    the wizard uses (see questionCardMarkup in act2.js). Options are
-   {val, label} so stored values stay short while labels read naturally. */
-function toggleQuestionCardMarkup({ name, label, options, value, optional, revealHtml }) {
+   {val, label} so stored values stay short while labels read naturally.
+   The help icon only shows when there's help text to show in it. */
+function questionHelpMarkup(help) {
+  return help ? `<span class="question-help" tabindex="0" role="note" aria-label="${help}" data-tooltip="${help}">${icon('circle-help', 20)}</span>` : '';
+}
+
+function toggleGroupMarkup(name, options, value) {
+  return `
+    <div class="segmented" data-toggle-q="${name}">
+      ${options.map(o => {
+        const val = typeof o === 'string' ? o : o.val;
+        const text = typeof o === 'string' ? o : o.label;
+        return `<button data-val="${val}" class="${value === val ? 'active' : ''}">${text}</button>`;
+      }).join('')}
+    </div>`;
+}
+
+function toggleQuestionCardMarkup({ name, label, options, value, optional, help, revealHtml }) {
   return `
     <div class="question-card">
       <div class="question-header">
         <span class="p-sm font-semibold">${label}${optional ? ' <span class="field-optional">(Optional)</span>' : ''}</span>
-        ${icon('circle-help', 20)}
+        ${questionHelpMarkup(help)}
       </div>
-      <div class="segmented" data-toggle-q="${name}">
-        ${options.map(o => {
-          const val = typeof o === 'string' ? o : o.val;
-          const text = typeof o === 'string' ? o : o.label;
-          return `<button data-val="${val}" class="${value === val ? 'active' : ''}">${text}</button>`;
-        }).join('')}
-      </div>
+      ${toggleGroupMarkup(name, options, value)}
       ${revealHtml ? `<div class="question-card-reveal">${revealHtml}</div>` : ''}
     </div>`;
 }
@@ -190,20 +210,19 @@ function toggleQuestionCardMarkup({ name, label, options, value, optional, revea
 function agentQuestionMarkup() {
   const rep = listing.representedByAgent;
   const followUp = AGENT_FOLLOW_UPS[rep];
-  return `
-    ${toggleQuestionCardMarkup({
-      name: 'agent',
-      label: 'Are you currently represented by a real estate agent?',
-      optional: true,
-      options: AGENT_OPTIONS,
-      value: rep
-    })}
-    ${followUp ? toggleQuestionCardMarkup({
-      name: 'agent-follow-up',
-      label: followUp.question,
-      options: followUp.options,
-      value: listing.agentFollowUp[rep]
-    }) : ''}`;
+  /* The follow-up belongs to the answer above it, so it opens in the same card */
+  return toggleQuestionCardMarkup({
+    name: 'agent',
+    label: 'Are you currently represented by a real estate agent?',
+    optional: true,
+    options: AGENT_OPTIONS,
+    value: rep,
+    revealHtml: followUp ? `
+      <div class="field">
+        <label>${followUp.question}</label>
+        ${toggleGroupMarkup('agent-follow-up', followUp.options, listing.agentFollowUp[rep])}
+      </div>` : ''
+  });
 }
 
 /* Schools — asked here, next to the address they depend on, instead of on
@@ -251,16 +270,21 @@ function renderA11(root) {
       return `
         <div class="prefill-box">
           <p class="p-sm font-semibold">What's the correct square footage?</p>
-          <div class="field"><input type="number" id="prefill-fix-input" value="${a.prefill.sqft}" /></div>
-          <div class="prefill-actions"><button class="btn btn-sm btn-primary" id="prefill-save">Save</button></div>
+          <div class="prefill-fix-row">
+            <div class="field"><input type="number" id="prefill-fix-input" aria-label="Square footage" value="${a.prefill.sqft}" /></div>
+            <button class="btn btn-primary" id="prefill-save">Save</button>
+          </div>
         </div>`;
     }
-    if (confirmState === 'confirmed') {
-      return `<div class="prefill-box confirmed"><p class="p-sm font-semibold">${icon('check')} ${a.prefill.sqft.toLocaleString()} sq. ft. — confirmed</p></div>`;
-    }
-    if (confirmState === 'corrected') {
-      return `<div class="prefill-box corrected"><p class="p-sm font-semibold">${icon('pencil-ruler')} ${a.prefill.sqft.toLocaleString()} sq. ft. — corrected by you</p></div>`;
-    }
+    /* Settled states stay editable: Edit reopens the correction input */
+    const settled = (cls, iconName, note) => `
+      <div class="prefill-box prefill-settled ${cls}">
+        <span class="prefill-settled-icon">${icon(iconName, 16)}</span>
+        <p class="p-sm font-semibold">${a.prefill.sqft.toLocaleString()} sq. ft. — ${note}</p>
+        <button type="button" class="btn btn-sm btn-outline" id="prefill-edit">${icon('pencil', 14)} Edit</button>
+      </div>`;
+    if (confirmState === 'confirmed') return settled('confirmed', 'check', 'confirmed');
+    if (confirmState === 'corrected') return settled('corrected', 'pencil-ruler', 'corrected by you');
     return '';
   };
 
@@ -323,8 +347,16 @@ function renderA11(root) {
   const yesBtn = root.querySelector('#prefill-yes');
   if (yesBtn) yesBtn.addEventListener('click', () => { a.prefill.confirmed.sqft = 'confirmed'; saveListing(); renderApp(); });
 
-  const fixBtn = root.querySelector('#prefill-fix');
-  if (fixBtn) fixBtn.addEventListener('click', () => { a.prefill.confirmed.sqft = 'fixing'; saveListing(); renderApp(); });
+  root.querySelectorAll('#prefill-fix, #prefill-edit').forEach(btn => btn.addEventListener('click', () => {
+    a.prefill.confirmed.sqft = 'fixing';
+    saveListing();
+    renderApp();
+    const fixInput = document.getElementById('prefill-fix-input');
+    if (fixInput) { fixInput.focus(); fixInput.select(); }
+  }));
+
+  const fixInputEl = root.querySelector('#prefill-fix-input');
+  if (fixInputEl) fixInputEl.addEventListener('keydown', ev => { if (ev.key === 'Enter') root.querySelector('#prefill-save').click(); });
 
   const saveFixBtn = root.querySelector('#prefill-save');
   if (saveFixBtn) saveFixBtn.addEventListener('click', () => {

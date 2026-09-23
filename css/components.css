@@ -1089,10 +1089,7 @@ input[type="checkbox"]:disabled { opacity: 0.5; cursor: not-allowed; }
 .hd-tab.complete .hd-tab-count svg { width: 14px; height: 14px; stroke-width: 2.5; }
 
 .hd-panel { display: flex; flex-direction: column; gap: var(--space-xl); }
-.hd-panel > .hd-heading { margin-bottom: calc(var(--space-md) * -1); padding-top: var(--space-xs); }
-.hd-panel > .hd-heading:first-child { padding-top: 0; }
 .hd-row { align-items: start; }
-.hd-panel > .stepper { max-width: calc(50% - var(--space-2xl) / 2); }
 .hd-row-3 { grid-template-columns: repeat(3, 1fr); }
 .hd-summary { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); padding: var(--space-md) var(--space-xl); }
 
@@ -1248,7 +1245,6 @@ input[type="checkbox"]:disabled { opacity: 0.5; cursor: not-allowed; }
   .comparable-carousel .icon-button { display: none; }
   .field-grid, .field-grid.dense, .hd-row-3 { grid-template-columns: 1fr; gap: var(--space-xl); }
   .hd-overall-row > span:first-child { display: none; }
-  .hd-panel > .stepper { max-width: none; }
   /* Short option labels: two columns still fit at phone width */
   .hd-panel .checkbox-grid { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: var(--space-xs) var(--space-md); }
   /* The strip scrolls; fade its right edge so the next tab peeks in */
@@ -1290,4 +1286,52 @@ body.comment-mode .comment-fab { cursor: pointer !important; }
 
 @media (max-width: 640px) {
   .comment-fab { right: var(--space-md); bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ---------- Form sections: bordered blocks of related questions ---------- */
+
+.form-section {
+  min-width: 0;
+  background: var(--background);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+.form-section > .section-label { margin-bottom: calc(var(--space-s) * -1); text-transform: uppercase; }
+
+/* A QuestionCard inside a block drops its own border: the block is the card */
+.form-section .question-card { border: 0; border-radius: 0; padding: 0; background: none; }
+.form-section .hd-summary { background: var(--background-subtle); border-color: var(--border-muted); border-radius: var(--radius-2xl); }
+.form-section > .stepper { max-width: calc(50% - var(--space-2xl) / 2); }
+
+/* Help icon only rendered when it has text; the text shows on hover/focus */
+.question-help { position: relative; display: flex; color: var(--muted-foreground); cursor: help; }
+.question-help::after {
+  content: attr(data-tooltip);
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 5;
+  width: max-content; max-width: 260px;
+  padding: var(--space-xs) var(--space-s);
+  border-radius: var(--radius-lg);
+  background: var(--foreground); color: var(--background);
+  font-size: var(--p-mini-size); line-height: var(--p-mini-lh); font-weight: 500;
+  opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+}
+.question-help:hover::after, .question-help:focus-visible::after { opacity: 1; }
+
+/* Settled sq-ft prefill: icon, text and Edit on one centred row */
+.prefill-settled { flex-direction: row; align-items: center; gap: var(--space-s); padding: var(--space-s) var(--space-s) var(--space-s) var(--space-md); }
+.prefill-settled > p { flex: 1; min-width: 0; }
+.prefill-settled-icon { display: flex; flex-shrink: 0; }
+.prefill-settled.confirmed .prefill-settled-icon { color: var(--primary); }
+.prefill-settled.corrected .prefill-settled-icon { color: var(--secondary-foreground); }
+.prefill-settled .btn { flex-shrink: 0; background: var(--background); gap: 6px; }
+.prefill-fix-row { display: flex; gap: var(--space-xs); align-items: center; }
+.prefill-fix-row .field { flex: 1; }
+
+@media (max-width: 640px) {
+  .form-section { padding: var(--space-md); gap: var(--space-lg); }
+  .form-section > .stepper { max-width: none; }
 }

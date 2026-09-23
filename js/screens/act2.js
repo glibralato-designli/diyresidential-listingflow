@@ -82,27 +82,28 @@ function renderA22(root) {
   const includedSet = new Set(d.includedItems || []);
 
   const body = `
-    <div class="section-label">PROPERTY DETAILS &amp; INCLUDED ITEMS (RF 201 SECTION A)</div>
-    <div class="field-grid dense">
-      <div class="field">
-        <label>Date you acquired the property</label>
-        <input type="text" placeholder="MM/DD/YYYY" id="f-acquired" value="${d.dateAcquired || ''}" />
-      </div>
-      <div class="field">
-        <label>Is the home site-built, manufactured, or modular?</label>
-        <div class="segmented" id="built-segmented">
-          ${['Site-built', 'Manufactured', 'Modular'].map(v => `<button data-val="${v}" class="${d.builtType === v ? 'active' : ''}">${v}</button>`).join('')}
+    ${formSectionMarkup('Property details &amp; included items (RF 201 Section A)', `
+      <div class="field-grid dense">
+        <div class="field">
+          <label>Date you acquired the property</label>
+          <input type="text" placeholder="MM/DD/YYYY" id="f-acquired" value="${d.dateAcquired || ''}" />
+        </div>
+        <div class="field">
+          <label>Is the home site-built, manufactured, or modular?</label>
+          <div class="segmented" id="built-segmented">
+            ${['Site-built', 'Manufactured', 'Modular'].map(v => `<button data-val="${v}" class="${d.builtType === v ? 'active' : ''}">${v}</button>`).join('')}
+          </div>
         </div>
       </div>
-    </div>
-    <div class="field">
-      ${questionCardMarkup('Is this property new construction (offered for sale for the first time)?', 'newConstruction', ['Yes', 'No'], d.newConstruction, 'data-new-construction')}
-      <div class="field-reaction helper">${icon('circle-help')} New-construction sales use a different Tennessee disclosure (RF 203).</div>
-    </div>
-    <div class="field">
-      <label>Which of these items are present and included in the sale? (Optional)</label>
-      ${checkboxGridMarkup('includedItems', INCLUDED_ITEMS, includedSet)}
-    </div>
+      <div class="field">
+        ${questionCardMarkup('Is this property new construction (offered for sale for the first time)?', 'newConstruction', ['Yes', 'No'], d.newConstruction, 'data-new-construction')}
+        <div class="field-reaction helper">${icon('circle-help')} New-construction sales use a different Tennessee disclosure (RF 203).</div>
+      </div>
+      <div class="field">
+        <label>Which of these items are present and included in the sale? <span class="field-optional">(Optional)</span></label>
+        ${checkboxGridMarkup('includedItems', INCLUDED_ITEMS, includedSet)}
+      </div>
+    `)}
   `;
 
   root.innerHTML = workingScreenMarkup({
@@ -185,12 +186,12 @@ const CONDITION_ANSWERS = ['Yes', 'No', 'Unknown'];
 /* QuestionCard — confirmed real component (node 5663:54799): one bordered
    card per question, label + help-circle icon header, toggle group below.
    Used for A2.2/A2.5's standalone yes/no questions. */
-function questionCardMarkup(label, key, options, value, dataAttr) {
+function questionCardMarkup(label, key, options, value, dataAttr, help) {
   return `
     <div class="question-card">
       <div class="question-header">
         <span class="p-sm font-semibold">${label}</span>
-        ${icon('circle-help', 20)}
+        ${questionHelpMarkup(help)}
       </div>
       <div class="segmented" ${dataAttr}="${key}">
         ${options.map(v => `<button data-val="${v}" class="${value === v ? 'active' : ''}">${v}</button>`).join('')}

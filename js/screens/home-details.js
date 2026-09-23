@@ -49,6 +49,7 @@ const HOME_DETAILS_TABS = [
   {
     id: 'rooms', label: 'Rooms',
     items: [
+      { heading: 'Bedrooms & bathrooms' },
       { summary: 'rooms' },
       { key: 'primaryBedroom', type: 'toggle', label: 'Primary bedroom is…', notSure: true,
         options: ['On MAIN level', 'Accessible by stairs', 'Accessible by stairs AND elevator or lift'] },
@@ -260,11 +261,21 @@ function hdRoomsSummary() {
 
 function hdItemMarkup(item, f) {
   if (item.showIf && !item.showIf(f)) return '';
-  if (item.heading) return `<p class="section-label hd-heading">${item.heading.toUpperCase()}</p>`;
   if (item.callout) return `<div class="info-callout"><p class="info-callout-title">${icon('info', 16)} ${item.callout}</p><p class="info-callout-text">${item.text}</p></div>`;
   if (item.summary === 'rooms') return hdRoomsSummary();
   if (item.row) return `<div class="field-grid dense hd-row hd-row-${item.row.length}">${item.row.map(q => HD_RENDERERS[q.type](q, f)).join('')}</div>`;
   return HD_RENDERERS[item.type](item, f);
+}
+
+/* Each heading opens a bordered block holding the questions under it */
+function hdSectionsMarkup(items, f) {
+  const sections = [];
+  items.forEach(item => {
+    if (item.showIf && !item.showIf(f)) return;
+    if (item.heading || !sections.length) sections.push({ heading: item.heading, parts: [] });
+    if (!item.heading) sections[sections.length - 1].parts.push(hdItemMarkup(item, f));
+  });
+  return sections.map(sec => formSectionMarkup(sec.heading, sec.parts.join(''))).join('');
 }
 
 /* ---------- Tab bar ---------- */
@@ -322,7 +333,7 @@ function renderA15(root) {
       ${hdTabBarMarkup(f)}
     </div>
     <div class="hd-panel" role="tabpanel" id="hd-panel">
-      ${tab.items.map(item => hdItemMarkup(item, f)).join('')}
+      ${hdSectionsMarkup(tab.items, f)}
       ${hdTabNavMarkup()}
     </div>
   `;
