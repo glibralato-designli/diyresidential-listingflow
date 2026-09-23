@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DIY Residential — Listing flow prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="nav-bar">
+    <div class="brand">DIY Residential</div>
+    <div class="nav-actions">
+      <button class="steps-trigger" id="steps-trigger" hidden>
+        <span data-lucide="menu" class="icon" style="width:16px;height:16px"></span>
+        Steps
+      </button>
+    </div>
+  </div>
+
+  <div id="screen-area" class="screen-area"></div>
+</div>
+
+<div class="nav-overlay-scrim" id="nav-overlay-scrim"></div>
+<div class="nav-overlay-panel" id="nav-overlay-panel">
+  <button class="modal-close nav-overlay-close" id="nav-overlay-close" aria-label="Close steps">
+    <span data-lucide="x" class="icon" style="width:16px;height:16px"></span>
+  </button>
+  <div id="nav-overlay-content"></div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/state.js"></script>
+<script src="js/living-card.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/router.js"></script>
+<script src="js/screens/entry.js"></script>
+<script src="js/screens/act1.js"></script>
+<script src="js/screens/act2.js"></script>
+<script src="js/screens/act3.js"></script>
+<script src="js/screens/act4.js"></script>
+<script src="js/screens/preview.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', initApp);
+</script>
+</body>
+</html>

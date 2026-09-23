@@ -1,0 +1,67 @@
+:root {
+  /* Brand */
+  --primary:            #265f50;
+  --primary-faint:      #f3faf7;
+  --primary-foreground: #ffffff;
+
+  /* Accent — the wizard uses this, not the green */
+  --secondary:            #ecce9a;
+  --secondary-subtle:     #f2deb6;
+  --secondary-faint:      #f9f0db;
+  --secondary-foreground: #6c3e22;
+  --secondary-strong:     #d78d38; /* intent/secondary/secondary-strong — partial-progress fill */
+  --secondary-50:         #fcf8f0; /* secondary/50 — Selection row selected background */
+
+  /* Text */
+  --foreground:       #020617;
+  --foreground-alt:   #334155;
+  --muted-foreground: #64748b;
+
+  /* Surfaces */
+  --background:        #ffffff;
+  --background-subtle: #f8fafc;
+  --input:             #ffffff;
+
+  /* Borders */
+  --border:        #e2e8f0;
+  --border-strong: #cbd5e1;
+  --border-muted:  #f1f5f9;
+
+  /* Sidebar */
+  --sidebar:            #f8fafc;
+  --sidebar-foreground: #1e293b;
+  --sidebar-border:     #e2e8f0;
+  --sidebar-muted:      #64748b;
+
+  /* Spacing */
+  --space-3xs: 2px;  --space-xs: 8px;   --space-s: 12px;
+  --space-md: 16px;  --space-lg: 20px;  --space-xl: 24px;
+  --space-2xl: 32px; --space-3xl: 40px; --space-5xl: 64px;
+
+  /* Radius */
+  --radius-md: 6px;   --radius-lg: 8px;   --radius-2xl: 16px;
+  --radius-3xl: 24px; --radius-32: 32px;  --radius-full: 9999px;
+
+  /* Elevation */
+  --shadow-2xs: 0 1px 0 0 #0000000d;
+  --shadow-xs:  0 1px 2px 0 #0000000d;
+  --shadow-sm:  0 1px 2px -1px #00000012, 0 1px 3px 0 #00000012;
+
+  /* Control heights */
+  --button-lg: 40px; --button-sm: 32px; --input-lg: 40px;
+
+  /* Type — Manrope. h3 confirmed present in the real Figma variable set
+     (24/28.8/-1/700) despite the spec doc saying there's no h3 — using
+     it for card/modal headings that sit between h2 and h4. */
+  --h1-size: 48px; --h1-lh: 56px; --h1-tracking: -1px;
+  --h2-size: 30px; --h2-lh: 38px; --h2-tracking: -1px;
+  --h3-size: 24px; --h3-lh: 28.8px; --h3-tracking: -1px;
+  --h4-size: 20px; --h4-lh: 24px; --h4-tracking: 0;
+
+  /* Button shadow, confirmed from the real "Back" button instance */
+  --shadow-button: 0 1px 3px 0 #00000012, 0 1px 2px 0 #00000012;
+  --p-lg-size: 18px; --p-lg-lh: 28px;
+  --p-reg-size: 16px; --p-reg-lh: 24px;
+  --p-sm-size: 14px; --p-sm-lh: 20px; --p-sm-tracking: 0.5px;
+  --p-mini-size: 12px; --p-mini-lh: 16px; --p-mini-tracking: 1.5px;
+}

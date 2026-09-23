@@ -1,0 +1,240 @@
+/* ---------- App shell ---------- */
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+}
+
+/* ---------- Navigation bar (76px, present on every screen) ---------- */
+
+.nav-bar {
+  height: 76px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-5xl);
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 10;
+}
+
+.nav-bar .brand {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.nav-bar .nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.steps-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-s);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--background);
+}
+
+.steps-trigger:hover { background: var(--background-subtle); }
+
+/* ---------- Screen area ---------- */
+
+.screen-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ---------- Full-bleed screens (modal, overview, act cover, milestone, preview-lite) ---------- */
+
+.screen-fullbleed {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl) var(--space-md);
+}
+
+.screen-fullbleed .fullbleed-inner {
+  max-width: 720px;
+  width: 100%;
+  text-align: center;
+}
+
+/* ---------- Working screens: three-zone split ---------- */
+
+.screen-working {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-split-container {
+  max-width: 1160px;
+  width: 100%;
+  margin: 0 auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3xl) var(--space-2xl) 0;
+}
+
+.screen-text-block {
+  max-width: 936px;
+  margin: 0 auto var(--space-xl);
+  width: 100%;
+}
+
+.screen-text-block .eyebrow {
+  color: var(--muted-foreground);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: var(--space-xs);
+}
+
+.split-zones {
+  max-width: 936px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  gap: var(--space-2xl);
+  align-items: flex-start;
+}
+
+.zone-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.zone-rail {
+  width: 288px;
+  flex-shrink: 0;
+  position: sticky;
+  top: var(--space-2xl);
+}
+
+/* Working screens with no rail (e.g. dense screens that don't need it hidden) still reserve the split */
+.split-zones.no-rail .zone-content { max-width: 616px; }
+
+/* ---------- Footer bar ---------- */
+
+.footer-bar {
+  height: 88px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-2xl);
+}
+
+.footer-bar-inner {
+  max-width: 1160px;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-2xl);
+}
+
+/* ---------- Nav overlay (act-scoped steps, opened from the nav bar) ---------- */
+
+.nav-overlay-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.4);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.nav-overlay-scrim.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nav-overlay-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 320px;
+  background: var(--sidebar);
+  border-right: 1px solid var(--sidebar-border);
+  z-index: 101;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-xl) var(--space-md);
+  overflow-y: auto;
+}
+
+.nav-overlay-panel.open {
+  transform: translateX(0);
+}
+
+.nav-overlay-close {
+  align-self: flex-end;
+  margin-bottom: var(--space-md);
+}
+
+/* ---------- Living card band (<1280) ---------- */
+
+.living-card-band { display: none; }
+
+/* ---------- Breakpoints ---------- */
+
+@media (max-width: 1279px) {
+  .split-zones { flex-direction: column; align-items: stretch; }
+  .zone-rail { display: none; }
+  .living-card-band { display: block; margin-bottom: var(--space-xl); }
+}
+
+@media (max-width: 640px) {
+  .nav-bar { padding: 0 var(--space-md); }
+  .main-split-container { padding: var(--space-xl) var(--space-md) 0; }
+  .footer-bar-inner { padding: 0 var(--space-md); }
+  .nav-overlay-panel { width: 88vw; }
+
+  /* Two-column form grids stack; long-label toggle groups become a
+     full-width stacked list instead of wrapping mid-button. */
+  .field-grid { grid-template-columns: 1fr; }
+  .checkbox-grid { grid-template-columns: 1fr; }
+  .valuation-tiers { flex-direction: column; }
+  .choice-grid { grid-template-columns: 1fr 1fr; }
+
+  .segmented { flex-direction: column; width: 100%; }
+  .segmented button {
+    white-space: normal;
+    text-align: left;
+    width: 100%;
+    margin-left: 0;
+    margin-top: -1px;
+    border-radius: 0;
+  }
+  .segmented button:first-child { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .segmented button:last-child { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+  .segmented button:only-child { border-radius: var(--radius-lg); }
+
+  .footer-bar-inner { flex-wrap: wrap; height: auto; gap: var(--space-xs) 0; padding-top: var(--space-xs); padding-bottom: var(--space-xs); }
+  .footer-bar { height: auto; }
+
+  /* yn-row's label + segmented sit side by side on wide screens; let the
+     now-full-width stacked segmented drop to its own line on mobile. */
+  .yn-row { flex-wrap: wrap; }
+  .yn-row .segmented { flex-basis: 100%; }
+}

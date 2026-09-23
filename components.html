@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Components — DIY Residential prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<style>
+  body { padding: var(--space-2xl) var(--space-3xl) var(--space-5xl); max-width: 1280px; margin: 0 auto; }
+  .proof-section { margin-bottom: var(--space-5xl); }
+  .proof-section h2 { margin-bottom: var(--space-xs); }
+  .proof-section .proof-note { color: var(--muted-foreground); margin-bottom: var(--space-xl); max-width: 720px; }
+  .proof-row { display: flex; gap: var(--space-xl); flex-wrap: wrap; align-items: flex-start; }
+  .proof-cell { display: flex; flex-direction: column; gap: var(--space-xs); }
+  .proof-cell .proof-label { font-size: 12px; font-weight: 700; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.5px; }
+  .proof-cell.w288 { width: 288px; }
+  .proof-cell.w360 { width: 360px; }
+  .comparison-strip { display: flex; flex-direction: column; gap: var(--space-xs); width: 420px; border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); padding: var(--space-md); }
+  .nav-demo-frame { width: 320px; background: var(--sidebar); border: 1px solid var(--sidebar-border); border-radius: var(--radius-lg); padding: var(--space-md); }
+</style>
+</head>
+<body>
+
+<h1 class="h2" style="margin-bottom:4px">Component proof sheet</h1>
+<p class="p-reg text-muted" style="margin-bottom:var(--space-3xl)">Section 11 of the spec. These render through the app's real functions (living-card.js, nav.js) with swapped-in demo state — not restyled copies.</p>
+
+<section class="proof-section" id="section-living-card">
+  <h2 class="h4">Living card — all states</h2>
+  <p class="p-sm proof-note">Skeleton → partial → photographed → complete, plus the &lt;1280 band variant. Non-interactive: no hover, no cursor change, no elevation change.</p>
+  <div class="proof-row" id="living-card-demo-row"></div>
+</section>
+
+<section class="proof-section" id="section-cover-milestone">
+  <h2 class="h4">Act cover &amp; milestone</h2>
+  <p class="p-sm proof-note">Exactly five elements on the cover: act number, title (≤4 words), one line (≤14 words), three chips, one button. No duration, ever.</p>
+  <div class="proof-row" id="cover-milestone-demo-row"></div>
+</section>
+
+<section class="proof-section" id="section-why-line">
+  <h2 class="h4">Why-line — four variants, plus the comparison strip</h2>
+  <p class="p-sm proof-note">The critical constraint: <code>good-to-know</code> and <code>value-prompt</code> occupy the same position and size as the error line and the muted helper — a compliment must not look like a warning.</p>
+  <div class="proof-row" id="why-line-demo-row"></div>
+</section>
+
+<section class="proof-section" id="section-nav">
+  <h2 class="h4">Act-scoped navigation</h2>
+  <p class="p-sm proof-note">One rendering showing every state at once: a done act (collapsed, green check), the current act (expanded, with done/active/todo step rows), and upcoming acts (single greyed row, one-line promise, no padlock).</p>
+  <div class="nav-demo-frame" id="nav-demo-frame"></div>
+</section>
+
+<section class="proof-section" id="section-question-card">
+  <h2 class="h4">QuestionCard + Toggle Group</h2>
+  <p class="p-sm proof-note">Confirmed real components (node 5663:54799 / 5663:54803 / 5663:54815) — one bordered card per question, label + help-circle header, a pill-shaped segmented control below. Selected = pale amber fill + bold amber-brown text; unselected = transparent + bold near-black text, both weights equal.</p>
+  <div class="proof-row" id="question-card-demo-row"></div>
+</section>
+
+<section class="proof-section" id="section-choice-card">
+  <h2 class="h4">Choice card grid</h2>
+  <p class="p-sm proof-note">E1's property-type grid. 3×2, icon 32–40px above the label, no subtitle. Selected state uses the wizard's amber accent, not the brand green.</p>
+  <div class="choice-grid" style="max-width:640px" id="choice-card-demo"></div>
+</section>
+
+<section class="proof-section" id="section-prefill">
+  <h2 class="h4">Prefill confirmation control — all states</h2>
+  <p class="p-sm proof-note">Unconfirmed → confirmed / corrected, plus the nothing-was-prefilled case (coverage varies by address).</p>
+  <div class="proof-row" id="prefill-demo-row"></div>
+</section>
+
+<section class="proof-section" id="section-not-sure">
+  <h2 class="h4">"I'm not sure" / "Unknown" — both forms</h2>
+  <p class="p-sm proof-note">An explicit option on paced screens; inline on every row on dense screens. Never blocks continue.</p>
+  <div class="proof-row" id="not-sure-demo-row"></div>
+</section>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/state.js"></script>
+<script src="js/living-card.js"></script>
+<script src="js/nav.js"></script>
+<script>
+function demoPhoto() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#ecce9a"/><path d="M60 180 L200 80 L340 180 L340 240 L60 240 Z" fill="#6c3e22" opacity="0.35"/><rect x="150" y="160" width="60" height="80" fill="#f9f0db"/></svg>`;
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+function baseDemoListing() {
+  const l = defaultListing();
+  l.address.line1 = '123 Maple Street';
+  l.address.city = 'Nashville';
+  l.address.state = 'TN';
+  l.address.zip = '37201';
+  l.address.resolved = true;
+  l.basics.beds = 3; l.basics.baths = 2; l.basics.sqft = 2450;
+  return l;
+}
+
+/* ---- Living card, 5 states ---- */
+const livingCardRow = document.getElementById('living-card-demo-row');
+const lcCell = (label, cls, buildFn, band) => {
+  const div = document.createElement('div');
+  div.className = 'proof-cell ' + cls;
+  const savedListing = listing;
+  listing = buildFn();
+  div.innerHTML = `<span class="proof-label">${label}</span>` + renderLivingCard({ band });
+  listing = savedListing;
+  return div;
+};
+
+livingCardRow.appendChild(lcCell('Skeleton', 'w288', () => defaultListing(), false));
+livingCardRow.appendChild(lcCell('Partial', 'w288', () => baseDemoListing(), false));
+livingCardRow.appendChild(lcCell('Photographed', 'w288', () => {
+  const l = baseDemoListing();
+  l.media.photos['front'] = [demoPhoto()];
+  return l;
+}, false));
+livingCardRow.appendChild(lcCell('Complete', 'w288', () => {
+  const l = baseDemoListing();
+  l.media.photos['front'] = [demoPhoto()];
+  l.progress.completedActs = [1, 2, 3, 4];
+  l.price = 965168;
+  return l;
+}, false));
+livingCardRow.appendChild(lcCell('Band (<1280)', 'w360', () => {
+  const l = baseDemoListing();
+  l.media.photos['front'] = [demoPhoto()];
+  return l;
+}, true));
+
+/* ---- Act cover + milestone ---- */
+const coverRow = document.getElementById('cover-milestone-demo-row');
+coverRow.innerHTML = `
+  <div class="proof-cell" style="width:420px; border:1px solid var(--border); border-radius:var(--radius-3xl); padding:var(--space-2xl); text-align:center;">
+    <span class="proof-label">Act cover</span>
+    <div class="act-cover-icon">${icon('house', 48)}</div>
+    <div class="act-cover-number">Act 1 of 4</div>
+    <p class="h3">${ACT_NAMES[1]}</p>
+    <p class="p-reg act-cover-line">${ACT_PROMISES[1]}</p>
+    <div class="act-cover-chips">${['Address', 'Property basics', 'Your home'].map(c => `<span class="chip">${c}</span>`).join('')}</div>
+    <button class="btn btn-primary">Continue</button>
+  </div>
+  <div class="proof-cell" style="width:420px; border:1px solid var(--border); border-radius:var(--radius-3xl); padding:var(--space-2xl); text-align:center;">
+    <span class="proof-label">Milestone</span>
+    <p class="act-cover-number">Act 1 complete</p>
+    <div style="max-width:220px;margin:0 auto var(--space-md);">${(() => { const s = listing; listing = (() => { const l = baseDemoListing(); l.media.photos.front = [demoPhoto()]; return l; })(); const html = renderLivingCard({ band: false }); listing = s; return html; })()}</div>
+    <p class="p-reg act-cover-line">You've covered the basics — next, we'll walk through what buyers legally need to know.</p>
+    <button class="btn btn-primary">Continue to Act 2</button>
+  </div>
+`;
+refreshIcons();
+
+/* ---- Why-line, 4 variants + comparison strip ---- */
+document.getElementById('why-line-demo-row').innerHTML = `
+  <div class="proof-cell" style="width:320px">
+    <span class="proof-label">why</span>
+    <p class="p-sm font-semibold">Structure &amp; features</p>
+    <p class="why-line">We use these details to compare your home to similar listings.</p>
+  </div>
+  <div class="proof-cell" style="width:320px">
+    <span class="proof-label">term</span>
+    <p class="p-sm">Buyers pay <span class="term-chip">closing costs${icon('circle-help', 12)}</span> at settlement.</p>
+  </div>
+  <div class="comparison-strip">
+    <span class="proof-label">good-to-know vs. a warning vs. a muted helper vs. the prefill hint — same position, same size</span>
+    <div class="field-reaction good-to-know">${icon('badge-check')} Homes with a fenced yard sell slightly faster in this area.</div>
+    <div class="field-reaction error">${icon('x')} Enter a square footage greater than zero.</div>
+    <div class="field-reaction helper">${icon('circle-help')} This won't be shown to buyers.</div>
+    <div class="field-reaction prefill-hint">${icon('map-pin')} Prefilled from public records.</div>
+  </div>
+  <div class="proof-cell" style="width:320px">
+    <span class="proof-label">value-prompt</span>
+    <div class="field-reaction value-prompt">${icon('piggy-bank')} Homes with a documented HVAC service history often net a faster close.</div>
+  </div>
+`;
+refreshIcons();
+
+/* ---- QuestionCard + Toggle Group, 2-seg and 3-seg variants ---- */
+document.getElementById('question-card-demo-row').innerHTML = `
+  <div class="question-card" style="width:340px">
+    <div class="question-header">
+      <span class="p-sm font-semibold">Are there any liens on the property?</span>
+      ${icon('circle-help', 20)}
+    </div>
+    <div class="segmented"><button class="active">Yes</button><button>No</button></div>
+  </div>
+  <div class="question-card" style="width:340px">
+    <div class="question-header">
+      <span class="p-sm font-semibold">Are you aware of any defect or malfunction in the roof?</span>
+      ${icon('circle-help', 20)}
+    </div>
+    <div class="segmented"><button>Yes</button><button>No</button><button class="active">Unknown</button></div>
+  </div>
+`;
+refreshIcons();
+
+/* ---- Act-scoped nav, all states in one render ---- */
+listing = baseDemoListing();
+listing.progress.completedActs = [1];
+listing.progress.currentAct = 2;
+listing.progress.currentScreen = 'A2.2';
+navOverlayExpanded = new Set([1, 2]);
+const navFrame = document.getElementById('nav-demo-frame');
+navFrame.innerHTML = '<div id="nav-overlay-content"></div>';
+renderNavOverlayContent();
+// renderNavOverlayContent() wires click handlers itself; fine to leave live in this demo.
+
+/* ---- Choice card grid ---- */
+document.getElementById('choice-card-demo').innerHTML = [
+  ['house', 'Single-family home', true],
+  ['building-2', 'Condo', false],
+  ['building', 'Townhouse', false],
+  ['hotel', 'Multi-family', false],
+  ['land-plot', 'Land / Lot', false],
+  ['ellipsis', 'Other', false]
+].map(([i, label, sel]) => `
+  <div class="choice-card ${sel ? 'selected' : ''}">
+    ${icon(i, 36)}
+    <span class="choice-label">${label}</span>
+  </div>`).join('');
+refreshIcons();
+
+/* ---- Prefill confirmation, all 4 states ---- */
+document.getElementById('prefill-demo-row').innerHTML = `
+  <div class="proof-cell" style="width:300px">
+    <span class="proof-label">unconfirmed</span>
+    <div class="prefill-box">
+      <p class="p-sm font-semibold">We found 2,450 sq. ft. Is that correct?</p>
+      <div class="prefill-actions">
+        <button class="btn btn-sm btn-primary">Yes, looks right</button>
+        <button class="btn btn-sm btn-outline">Let me fix it</button>
+      </div>
+    </div>
+  </div>
+  <div class="proof-cell" style="width:300px">
+    <span class="proof-label">confirmed</span>
+    <div class="prefill-box confirmed"><p class="p-sm font-semibold">${icon('check')} 2,450 sq. ft. — confirmed</p></div>
+  </div>
+  <div class="proof-cell" style="width:300px">
+    <span class="proof-label">corrected</span>
+    <div class="prefill-box corrected"><p class="p-sm font-semibold">${icon('pencil-ruler')} 2,610 sq. ft. — corrected by you</p></div>
+  </div>
+  <div class="proof-cell" style="width:300px">
+    <span class="proof-label">nothing prefilled</span>
+    <div class="field-reaction helper">${icon('circle-help')} We couldn't find public records for this address — no problem, you can fill these in yourself.</div>
+  </div>
+`;
+refreshIcons();
+
+/* ---- "I'm not sure", both forms ---- */
+document.getElementById('not-sure-demo-row').innerHTML = `
+  <div class="proof-cell" style="width:340px">
+    <span class="proof-label">explicit option (paced screen)</span>
+    <div class="segmented">
+      <button>Yes</button><button>No</button><button class="active">I'm not sure</button>
+    </div>
+  </div>
+  <div class="proof-cell" style="width:340px">
+    <span class="proof-label">inline on a row (dense screen)</span>
+    <div class="field">
+      <label>Average monthly cost</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="number" disabled style="flex:1" />
+        ${(() => '<button class="not-sure-inline active">' + icon('circle-help', 12) + " I'm not sure</button>")()}
+      </div>
+    </div>
+  </div>
+`;
+refreshIcons();
+</script>
+</body>
+</html>
