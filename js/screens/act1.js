@@ -71,7 +71,7 @@ function actCoverMarkup({ actNum, title, line, chips }) {
         <p class="act-cover-number">Act ${actNum} of 4</p>
         <h1 class="act-cover-title">${title}</h1>
         <p class="act-cover-line">${line}</p>
-        <div class="act-cover-chips">${chips.map(c => `<span class="badge badge-secondary">${c}</span>`).join('')}</div>
+        <div class="act-cover-chips">${chips.map(c => `<span class="act-cover-tag">${c}</span>`).join('')}</div>
         <button class="btn btn-primary act-cover-action" id="cover-continue">${ACT_COVER_ACTIONS[actNum]}</button>
         ${actCoverProgressMarkup()}
       </div>

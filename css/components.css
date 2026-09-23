@@ -427,7 +427,22 @@
 }
 
 .act-cover-chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-bottom: 48px; }
-.act-cover-chips .badge { padding: 3px var(--space-xs); min-height: 24px; letter-spacing: var(--p-mini-tracking); }
+/* Informational tags, not actions — the stat-chip style from the Listing
+   Card (node 6396:111519): subtle fill, hairline border, muted semibold. */
+.act-cover-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-s);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--background-subtle);
+  font-size: var(--p-mini-size);
+  line-height: var(--p-mini-lh);
+  letter-spacing: var(--p-mini-tracking);
+  font-weight: 600;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
 
 .act-cover-progress {
   width: 100%;
