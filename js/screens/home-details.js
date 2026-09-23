@@ -133,7 +133,6 @@ const HOME_DETAILS_TABS = [
   }
 ];
 
-let homeDetailsTab = 'structure';
 
 /* ---------- Answer bookkeeping ---------- */
 
@@ -150,6 +149,7 @@ function homeDetailsQuestions(tab, f) {
 function isAnswered(q, f) {
   const v = f[q.key];
   if (Array.isArray(v)) return v.length > 0;
+  if (v && typeof v === 'object') return Object.values(v).some(x => x !== '' && x !== null && x !== undefined);
   return v !== undefined && v !== null && v !== '';
 }
 
@@ -278,15 +278,19 @@ function hdSectionsMarkup(items, f) {
   return sections.map(sec => formSectionMarkup(sec.heading, sec.parts.join(''))).join('');
 }
 
-/* ---------- Tab bar ---------- */
+/* ---------- Tabbed form engine (shared by Home details and Utilities) ----------
+   cfg: { id, tabs, data, tabRef: { current }, eyebrow, title, description,
+          onBack, onContinue, ariaLabel } — every screen gets the same sticky
+   tab strip with per-tab counts, the overall answered bar, bordered blocks
+   per heading, "I'm not sure" as an answer, and Skip beside Continue. */
 
-function hdTabBarMarkup(f) {
+function hdTabBarMarkup(cfg) {
   return `
-    <div class="hd-tabs" role="tablist" aria-label="Home details sections">
-      ${HOME_DETAILS_TABS.map((t, i) => {
-        const p = tabProgress(t, f);
+    <div class="hd-tabs" role="tablist" aria-label="${cfg.ariaLabel}">
+      ${cfg.tabs.map(t => {
+        const p = tabProgress(t, cfg.data);
         const complete = p.total && p.done === p.total;
-        const active = t.id === homeDetailsTab;
+        const active = t.id === cfg.tabRef.current;
         return `
           <button class="hd-tab ${active ? 'active' : ''} ${complete ? 'complete' : ''}" role="tab" aria-selected="${active}" data-hd-tab="${t.id}">
             <span>${t.label}</span>
@@ -296,8 +300,8 @@ function hdTabBarMarkup(f) {
     </div>`;
 }
 
-function hdOverallMarkup(f) {
-  const all = HOME_DETAILS_TABS.map(t => tabProgress(t, f));
+function hdOverallMarkup(cfg) {
+  const all = cfg.tabs.map(t => tabProgress(t, cfg.data));
   const done = all.reduce((s, p) => s + p.done, 0);
   const total = all.reduce((s, p) => s + p.total, 0);
   return `
@@ -310,10 +314,10 @@ function hdOverallMarkup(f) {
     </div>`;
 }
 
-function hdTabNavMarkup() {
-  const i = HOME_DETAILS_TABS.findIndex(t => t.id === homeDetailsTab);
-  const prev = HOME_DETAILS_TABS[i - 1];
-  const next = HOME_DETAILS_TABS[i + 1];
+function hdTabNavMarkup(cfg) {
+  const i = cfg.tabs.findIndex(t => t.id === cfg.tabRef.current);
+  const prev = cfg.tabs[i - 1];
+  const next = cfg.tabs[i + 1];
   return `
     <div class="hd-tab-nav">
       ${prev ? `<button class="btn btn-outline" data-hd-go="${prev.id}">${icon('arrow-left', 16)} ${prev.label}</button>` : '<span></span>'}
@@ -321,34 +325,33 @@ function hdTabNavMarkup() {
     </div>`;
 }
 
-/* ---------- Screen ---------- */
-
-function renderA15(root) {
-  const f = listing.features;
-  const tab = HOME_DETAILS_TABS.find(t => t.id === homeDetailsTab) || HOME_DETAILS_TABS[0];
+function renderTabbedForm(root, cfg) {
+  const f = cfg.data;
+  const tab = cfg.tabs.find(t => t.id === cfg.tabRef.current) || cfg.tabs[0];
+  cfg.tabRef.current = tab.id;
 
   const body = `
     <div class="hd-head">
-      ${hdOverallMarkup(f)}
-      ${hdTabBarMarkup(f)}
+      ${hdOverallMarkup(cfg)}
+      ${hdTabBarMarkup(cfg)}
     </div>
     <div class="hd-panel" role="tabpanel" id="hd-panel">
       ${hdSectionsMarkup(tab.items, f)}
-      ${hdTabNavMarkup()}
+      ${hdTabNavMarkup(cfg)}
     </div>
   `;
 
   root.innerHTML = workingScreenMarkup({
-    eyebrow: 'Step 4 of 11 - Home & property details',
-    title: 'Tell us about your home',
-    description: 'Describe the structure, layout and features buyers will see.',
+    eyebrow: cfg.eyebrow,
+    title: cfg.title,
+    description: cfg.description,
     bodyHtml: body
-  }) + footerBarMarkup('Back', 'Continue', false);
+  }) + footerBarMarkup('Back', 'Continue', false, { skip: true });
 
   const save = () => { saveListing(); renderApp(); };
 
   const goTab = id => {
-    homeDetailsTab = id;
+    cfg.tabRef.current = id;
     renderApp();
     const head = document.querySelector('.hd-head');
     /* Stuck under the header: bring the new tab's first question into view */
@@ -364,10 +367,11 @@ function renderA15(root) {
   /* Counts refresh in place so a blur never swallows the next click */
   const refreshCounts = () => {
     const head = root.querySelector('.hd-head');
-    head.innerHTML = hdOverallMarkup(f) + hdTabBarMarkup(f);
+    head.innerHTML = hdOverallMarkup(cfg) + hdTabBarMarkup(cfg);
     refreshIcons();
     wireTabs(head);
     refreshLivingCardRail();
+    if (cfg.onRefresh) cfg.onRefresh(root);
   };
 
   /* "I'm not sure" is exclusive inside a checkbox group */
@@ -418,7 +422,27 @@ function renderA15(root) {
     }));
   });
 
-  wireFooter(root, { onBack: () => navigateTo('A1.4'), onContinue: () => navigateTo('A1.6') });
+  if (cfg.wire) cfg.wire(root, { save, refreshCounts });
+
+  wireFooter(root, { onBack: cfg.onBack, onContinue: cfg.onContinue, onSkip: cfg.onContinue });
+}
+
+/* ---------- Screen ---------- */
+
+const homeDetailsTabRef = { current: 'structure' };
+
+function renderA15(root) {
+  renderTabbedForm(root, {
+    tabs: HOME_DETAILS_TABS,
+    data: listing.features,
+    tabRef: homeDetailsTabRef,
+    ariaLabel: 'Home details sections',
+    eyebrow: 'Step 4 of 11 - Home & property details',
+    title: 'Tell us about your home',
+    description: 'Describe the structure, layout and features buyers will see.',
+    onBack: () => navigateTo('A1.4'),
+    onContinue: () => navigateTo('A1.6')
+  });
 }
 
 registerScreen('A1.5', { type: 'working', render: renderA15 });

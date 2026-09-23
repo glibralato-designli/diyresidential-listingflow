@@ -1714,3 +1714,15 @@ body.comment-mode .comment-fab { cursor: pointer !important; }
 .segmented button { flex: 1 1 auto; min-width: 0; text-align: center; }
 .input-with-toggle .segmented, .yn-row .segmented, .utility-row .segmented { width: auto; align-self: auto; }
 .input-with-toggle .segmented button, .yn-row .segmented button, .utility-row .segmented button { flex: 0 0 auto; }
+
+/* Utilities: combined monthly cost under the five company rows */
+.utility-total { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); padding: var(--space-md) var(--space-lg); border-radius: var(--radius-2xl); background: var(--background-subtle); margin-top: var(--space-xs); }
+.utility-total-title { font-size: var(--p-reg-size); line-height: var(--p-reg-lh); font-weight: 600; color: var(--foreground); }
+.utility-total-note { font-size: var(--p-mini-size); line-height: var(--p-mini-lh); letter-spacing: var(--p-mini-tracking); color: var(--muted-foreground); margin-top: 2px; }
+.utility-total-amount { font-size: var(--h3-size); line-height: var(--h3-lh); letter-spacing: var(--h3-tracking); font-weight: 700; color: var(--foreground); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.utility-total-amount span { font-size: var(--p-sm-size); font-weight: 600; letter-spacing: 0; color: var(--muted-foreground); margin-left: 2px; }
+.field-icon-input.is-disabled { background: var(--background-subtle); }
+@media (max-width: 640px) { .utility-total { flex-direction: column; align-items: flex-start; } }
+.form-section > .section-label + .utility-row { border-top: 0; padding-top: 0; }
+.form-section > .utility-row { padding-bottom: var(--space-md); }
+.form-section > .utility-row + .utility-row { padding-top: var(--space-md); }
