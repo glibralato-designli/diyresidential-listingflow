@@ -27,26 +27,75 @@ function readFilesAsDataURLs(fileList) {
   })));
 }
 
+/* Photo slots (Figma frames 5663:55330 empty, 5663:55035 uploaded,
+   5663:55408 dragging). Each slot is a card: icon tile, name + status
+   badge, "See example photos", Upload. Uploaded photos sit in a row of
+   100px tiles with a remove button; while files load they show
+   "Uploading…". Cards reorder by dragging the grip that appears on hover
+   (or with the arrow keys on the grip). */
+
+const SLOT_ICONS = { 'front-exterior': 'house', 'rear-exterior': 'house', 'living-room': 'tv', 'kitchen': 'coffee' };
+const slotIcon = id => SLOT_ICONS[id] || (id.startsWith('bedroom') ? 'bed-double' : id.startsWith('bathroom') ? 'droplets' : 'image');
+
+/* "Add another area": the icon follows the name the seller types, using
+   the same icon set as the built-in slots plus a few area-specific ones. */
+const AREA_ICON_RULES = [
+  [/bath|shower|powder|toilet/, 'droplets'],
+  [/bed|nursery|guest room|suite/, 'bed-double'],
+  [/kitchen|pantry|breakfast/, 'coffee'],
+  [/living|family|den|lounge|great room/, 'tv'],
+  [/dining/, 'utensils'],
+  [/garage|carport|driveway/, 'car'],
+  [/basement|cellar|storage|shed|workshop/, 'warehouse'],
+  [/office|study|library/, 'briefcase'],
+  [/laundry|utility|mud ?room/, 'washing-machine'],
+  [/gym|fitness|exercise/, 'dumbbell'],
+  [/pool|spa|hot tub/, 'waves'],
+  [/patio|deck|porch|balcony|yard|garden|lawn|backyard|landscap/, 'trees'],
+  [/closet|wardrobe|dressing/, 'shirt'],
+  [/hall|entry|foyer|stair|landing/, 'door-open'],
+  [/theater|theatre|media|game|play/, 'clapperboard'],
+  [/attic|loft|bonus/, 'house'],
+  [/exterior|front|rear|view|aerial|street/, 'house']
+];
+function areaIcon(name) {
+  const n = (name || '').toLowerCase();
+  const hit = AREA_ICON_RULES.find(([re]) => re.test(n));
+  return hit ? hit[1] : 'image';
+}
+let addingArea = false;
+
+let photoUploading = {}; // slot id -> number of files still loading (session only)
+let qrRevealed = false;
+
+function orderedPhotoSlots() {
+  const order = listing.media.slotOrder || [];
+  const rank = id => { const i = order.indexOf(id); return i === -1 ? 999 : i; };
+  const custom = (listing.media.customAreas || []).map(a => ({ id: a.id, label: a.label, required: false, custom: true }));
+  return photoSlotDefinitions().concat(custom).map((s, i) => ({ ...s, i })).sort((a, b) => (rank(a.id) - rank(b.id)) || (a.i - b.i));
+}
+
 function photoSlotCardMarkup(slot) {
   const photos = listing.media.photos[slot.id] || [];
+  const loading = photoUploading[slot.id] || 0;
+  const blurry = (listing.media.flags || {})[slot.id] === 'blurry';
+  const badge = photos.length
+    ? '<span class="badge photo-slot-badge is-uploaded">Uploaded</span>'
+    : `<span class="badge photo-slot-badge">${slot.required ? 'Required' : 'Optional'}</span>`;
   return `
-    <div class="card" style="padding: var(--space-md);" data-slot-card="${slot.id}">
-      <div style="display:flex; align-items:center; gap: var(--space-md);">
-        <div class="icon-wrap" style="width:40px;height:40px;">${icon('camera')}</div>
-        <div style="flex:1">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span class="p-sm font-semibold">${slot.label}</span>
-            ${slot.required ? '<span class="badge badge-secondary">Required</span>' : '<span class="badge badge-muted">Optional</span>'}
-          </div>
-          <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
-            <button class="btn-link" data-example-toggle="${slot.id}" style="font-size:12px">See example photos ↗</button>
-          </div>
-          <p class="p-mini text-muted" style="margin-top:4px">JPG, PNG or WEBP · up to 10 photos, 20MB each · ${photos.length}/10</p>
+    <div class="photo-slot" data-slot-card="${slot.id}">
+      <div class="photo-slot-row">
+        <button type="button" class="photo-slot-grip" data-grip="${slot.id}" aria-label="Drag to reorder ${slot.label}">${icon('grip-vertical', 20)}</button>
+        <span class="photo-slot-icon">${icon(slot.custom ? areaIcon(slot.label) : slotIcon(slot.id), 20)}</span>
+        <div class="photo-slot-text">
+          <div class="photo-slot-title-row"><span class="photo-slot-title">${slot.label}</span>${badge}</div>
+          <button type="button" class="photo-slot-example" data-example-toggle="${slot.id}">See example photos ${icon('arrow-up-right', 16)}</button>
         </div>
-        <label class="btn btn-sm btn-outline" style="cursor:pointer">
-          Upload
-          <input type="file" accept="image/*" multiple data-slot-input="${slot.id}" style="display:none" />
+        <label class="btn btn-outline photo-slot-upload">
+          ${icon('upload', 16)} Upload
+          <input type="file" accept="image/*" multiple data-slot-input="${slot.id}" hidden />
         </label>
+        ${slot.custom ? `<button type="button" class="photo-slot-remove" data-remove-area="${slot.id}" aria-label="Remove ${slot.label}">${icon('trash-2', 18)}</button>` : ''}
       </div>
       <div class="reveal" id="example-${slot.id}">
         <div class="field-reaction helper" style="align-items:center;">
@@ -54,9 +103,17 @@ function photoSlotCardMarkup(slot) {
           <span style="margin-left:8px">Example: shot straight-on, in daylight, with clutter cleared.</span>
         </div>
       </div>
-      ${photos.length ? `<div style="display:flex; gap:6px; margin-top:var(--space-s); flex-wrap:wrap;">
-        ${photos.map(p => `<img src="${p}" style="width:56px;height:42px;object-fit:cover;border-radius:6px;border:1px solid var(--border)" />`).join('')}
-      </div>` : ''}
+      ${photos.length || loading ? `
+        <div class="photo-slot-files">
+          ${photos.map((p, n) => `
+            <div class="photo-tile">
+              <img src="${p}" alt="${slot.label} photo ${n + 1}" />
+              <button type="button" class="photo-tile-remove" data-remove-photo="${slot.id}:${n}" aria-label="Remove photo ${n + 1}">${icon('x', 10)}</button>
+            </div>`).join('')}
+          ${Array.from({ length: loading }).map(() => `
+            <div class="photo-tile is-loading">${icon('loader', 20)}<span>Uploading…</span></div>`).join('')}
+        </div>` : ''}
+      ${blurry && photos.length ? `<p class="photo-slot-warning">${icon('triangle-alert', 16)} Blurry photo detected. Retake or replace.</p>` : ''}
     </div>`;
 }
 
@@ -65,18 +122,88 @@ function exampleThumb() {
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
 
-let qrRevealed = false;
+/* A photo under ~1000px wide reads as blurry once it's shown large */
+function looksBlurry(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(img.naturalWidth < 1000);
+    img.onerror = () => resolve(false);
+    img.src = dataUrl;
+  });
+}
+
+/* Drag the grip: the card lifts and follows the pointer; passing another
+   card's midpoint swaps them. The order is saved on release. */
+function wirePhotoReorder(root) {
+  const saveOrder = list => {
+    const ids = Array.from(root.querySelectorAll('[data-slot-card]')).map(el => el.dataset.slotCard);
+    listing.media.slotOrder = ids;
+    saveListing();
+  };
+
+  root.querySelectorAll('[data-grip]').forEach(grip => {
+    const card = grip.closest('[data-slot-card]');
+    const list = card.parentElement;
+
+    grip.addEventListener('pointerdown', ev => {
+      ev.preventDefault();
+      grip.setPointerCapture(ev.pointerId);
+      let tr = 0;
+      const naturalTop = () => card.getBoundingClientRect().top - tr;
+      const grab = ev.clientY - naturalTop();
+      card.classList.add('is-dragging');
+      list.classList.add('is-sorting');
+
+      const move = e => {
+        const top = e.clientY - grab;
+        const mid = top + card.offsetHeight / 2;
+        const siblings = Array.from(list.querySelectorAll('[data-slot-card]')).filter(el => el !== card);
+        for (const sib of siblings) {
+          const r = sib.getBoundingClientRect();
+          const sibMid = r.top + r.height / 2;
+          const sibIsAbove = card.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_PRECEDING;
+          if (sibIsAbove && mid < sibMid) { list.insertBefore(card, sib); break; }
+          if (!sibIsAbove && mid > sibMid) { list.insertBefore(card, sib.nextSibling); }
+        }
+        tr = top - (card.getBoundingClientRect().top - tr);
+        card.style.transform = `translateY(${tr}px)`;
+      };
+      const end = () => {
+        grip.removeEventListener('pointermove', move);
+        card.classList.remove('is-dragging');
+        list.classList.remove('is-sorting');
+        card.style.transform = '';
+        saveOrder();
+      };
+      grip.addEventListener('pointermove', move);
+      grip.addEventListener('pointerup', end, { once: true });
+      grip.addEventListener('pointercancel', end, { once: true });
+    });
+
+    grip.addEventListener('keydown', ev => {
+      if (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown') return;
+      ev.preventDefault();
+      if (ev.key === 'ArrowUp' && card.previousElementSibling) list.insertBefore(card, card.previousElementSibling);
+      else if (ev.key === 'ArrowDown' && card.nextElementSibling) list.insertBefore(card.nextElementSibling, card);
+      saveOrder();
+      grip.focus();
+    });
+  });
+}
 
 function renderA31(root) {
-  const slots = photoSlotDefinitions();
+  const slots = orderedPhotoSlots();
+  const required = slots.filter(s => s.required);
+  const optional = slots.filter(s => !s.required);
+  const pro = !!listing.media.proPhotography;
 
   const body = `
-    <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-md);">
+    <div class="capture-card">
       <div>
-        <p class="p-sm font-semibold">Capture on mobile</p>
-        <p class="p-sm text-muted">Scan to continue on your phone. Photos sync automatically.</p>
+        <p class="capture-title">Capture on mobile</p>
+        <p class="capture-text">Scan to continue on your phone. Progress syncs automatically.</p>
       </div>
-      <button class="btn btn-outline" id="qr-toggle">${icon('qr-code', 16)} Show QR code</button>
+      <button type="button" class="capture-qr" id="qr-toggle" aria-label="Show QR code" aria-expanded="${qrRevealed}">${icon('qr-code', 36)}</button>
     </div>
     <div class="reveal ${qrRevealed ? 'open' : ''}" id="qr-reveal">
       <div class="card" style="text-align:center;">
@@ -85,11 +212,40 @@ function renderA31(root) {
       </div>
     </div>
 
-    <div style="display:flex; flex-direction:column; gap:var(--space-md);">
-      ${slots.map(photoSlotCardMarkup).join('')}
+    <div class="photo-group">
+      <p class="section-label">REQUIRED PHOTOS</p>
+      <div class="photo-slot-list">${required.map(photoSlotCardMarkup).join('')}</div>
     </div>
+    ${optional.length ? `
+    <div class="photo-group">
+      <p class="section-label">OPTIONAL PHOTOS</p>
+      <div class="photo-slot-list">${optional.map(photoSlotCardMarkup).join('')}</div>
+    </div>` : ''}
 
-    <button class="btn btn-outline" id="add-area-btn" style="border-style:dashed;">${icon('plus', 14)} Add another area</button>
+    ${addingArea ? `
+      <div class="add-area-form">
+        <span class="photo-slot-icon" id="add-area-icon" aria-hidden="true">${icon('image', 20)}</span>
+        <div class="field add-area-field">
+          <label for="add-area-name">Name this area</label>
+          <input type="text" id="add-area-name" placeholder="e.g. Home office, Laundry room, Back patio" autocomplete="off" />
+        </div>
+        <div class="add-area-actions">
+          <button type="button" class="btn btn-outline" id="add-area-cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="add-area-save" disabled>Add area</button>
+        </div>
+      </div>` : `
+      <button type="button" class="add-area-btn" id="add-area-btn">${icon('plus', 16)} Add another area</button>`}
+
+    <div class="photo-slot pro-photo">
+      <div class="photo-slot-row">
+        <span class="photo-slot-icon is-accent">${icon('switch-camera', 20)}</span>
+        <div class="photo-slot-text">
+          <p class="photo-slot-title">Add Professional Photography</p>
+          <p class="pro-photo-text">Aerial and interior shots from <strong>$149</strong>, ordered seamlessly through our portal.</p>
+        </div>
+        <button type="button" class="switch${pro ? ' on' : ''}" role="switch" aria-checked="${pro}" aria-label="Add Professional Photography" id="pro-photo-switch"><span></span></button>
+      </div>
+    </div>
   `;
 
   root.innerHTML = workingScreenMarkup({
@@ -112,94 +268,161 @@ function renderA31(root) {
 
   root.querySelectorAll('[data-slot-input]').forEach(input => {
     input.addEventListener('change', async () => {
-      if (!input.files.length) return;
-      const urls = await readFilesAsDataURLs(input.files);
+      const files = Array.from(input.files);
+      if (!files.length) return;
       const slotId = input.dataset.slotInput;
-      const existing = listing.media.photos[slotId] || [];
-      listing.media.photos[slotId] = existing.concat(urls).slice(0, 10);
-      saveListing();
+      const room = Math.max(0, 10 - (listing.media.photos[slotId] || []).length);
+      const batch = files.slice(0, room);
+      photoUploading[slotId] = batch.length;
       renderApp();
+      const urls = await readFilesAsDataURLs(batch);
+      const blurry = (await Promise.all(urls.map(looksBlurry))).some(Boolean);
+      setTimeout(() => {
+        listing.media.photos[slotId] = (listing.media.photos[slotId] || []).concat(urls).slice(0, 10);
+        listing.media.flags = { ...(listing.media.flags || {}), [slotId]: blurry ? 'blurry' : null };
+        delete photoUploading[slotId];
+        saveListing();
+        renderApp();
+      }, 900);
     });
   });
 
-  root.querySelector('#add-area-btn').addEventListener('click', () => {
-    alert_stub();
+  root.querySelectorAll('[data-remove-photo]').forEach(btn => btn.addEventListener('click', () => {
+    const [slotId, n] = btn.dataset.removePhoto.split(':');
+    const list = listing.media.photos[slotId] || [];
+    list.splice(Number(n), 1);
+    listing.media.photos[slotId] = list;
+    if (!list.length && listing.media.flags) listing.media.flags[slotId] = null;
+    saveListing();
+    renderApp();
+  }));
+
+  root.querySelector('#pro-photo-switch').addEventListener('click', () => {
+    listing.media.proPhotography = !listing.media.proPhotography;
+    saveListing();
+    renderApp();
   });
 
-  wireFooter(root, { onBack: () => navigateTo('A2.6'), onContinue: () => navigateTo('A3.2') });
-}
+  wirePhotoReorder(root);
 
-function alert_stub() {
-  // Kept intentionally inert with visible feedback rather than a dead click.
-  const el = document.getElementById('add-area-btn');
-  if (el) { el.textContent = 'Added — name it from the thumbnail (not wired in this prototype)'; }
+  const addBtn = root.querySelector('#add-area-btn');
+  if (addBtn) addBtn.addEventListener('click', () => {
+    addingArea = true;
+    renderApp();
+    const input = document.getElementById('add-area-name');
+    if (input) input.focus();
+  });
+  const nameInput = root.querySelector('#add-area-name');
+  if (nameInput) {
+    const saveBtn = root.querySelector('#add-area-save');
+    const iconEl = root.querySelector('#add-area-icon');
+    let lastIcon = 'image';
+    nameInput.addEventListener('input', () => {
+      saveBtn.disabled = !nameInput.value.trim();
+      const next = areaIcon(nameInput.value);
+      if (next !== lastIcon) { lastIcon = next; iconEl.innerHTML = icon(next, 20); refreshIcons(); }
+    });
+    const add = () => {
+      const label = nameInput.value.trim();
+      if (!label) return;
+      const areas = listing.media.customAreas || [];
+      areas.push({ id: `custom-${Date.now().toString(36)}`, label });
+      listing.media.customAreas = areas;
+      addingArea = false;
+      saveListing();
+      renderApp();
+    };
+    saveBtn.addEventListener('click', add);
+    nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') add(); if (e.key === 'Escape') { addingArea = false; renderApp(); } });
+    root.querySelector('#add-area-cancel').addEventListener('click', () => { addingArea = false; renderApp(); });
+  }
+  root.querySelectorAll('[data-remove-area]').forEach(btn => btn.addEventListener('click', () => {
+    const id = btn.dataset.removeArea;
+    listing.media.customAreas = (listing.media.customAreas || []).filter(a => a.id !== id);
+    delete listing.media.photos[id];
+    saveListing();
+    renderApp();
+  }));
+
+  wireFooter(root, { onBack: () => navigateTo('A2.6'), onContinue: () => navigateTo('A3.2') });
 }
 
 registerScreen('A3.1', { type: 'working', render: renderA31 });
 
 /* ---------------- A3.2 — Video & floor plan ---------------- */
 
+/* Tips under the video drop zone (Figma node 5663:55437) */
 const VIDEO_CHIPS = [
   'Walk slowly, room by room',
   'Keep lights on throughout',
   'Include basement & attic',
-  'Landscape and driveway',
-  'Turn off all ceiling fans',
-  'Declutter first, then record'
+  'Landscape and driveway'
 ];
 
 function renderA32(root) {
   const m = listing.media;
   const body = `
-    <div class="field">
-      <label>Record a video walkthrough <span class="badge badge-muted">Optional</span></label>
-      <p class="p-sm text-muted">Walk through each room slowly to show the flow and layout of your home. A walkthrough video helps buyers picture living there and builds confidence before they schedule a visit.</p>
-      <div class="card" style="border-style:dashed; text-align:center;">
-        ${m.video ? `<p class="p-sm font-semibold">${icon('check', 16)} ${m.video}</p>` : `
-          <p>${icon('upload', 24)}</p>
-          <p class="p-sm">Choose a video or drag &amp; drop it here</p>
-          <p class="p-mini text-muted">MP4, MOV, up to 10 minutes</p>
-        `}
-        <label class="btn btn-sm btn-outline" style="cursor:pointer; margin-top:8px;">
-          ${m.video ? 'Replace' : 'Upload'}
-          <input type="file" accept="video/*" id="video-input" style="display:none" />
+    <section class="media-section">
+      <div class="media-section-head">
+        <p class="media-section-title">Record a video walkthrough</p>
+        <p class="media-section-text">Walk through each room slowly. Our AI detects condition issues, water stains, aging fixtures, structural concerns and more, that photos might miss. This improves your valuation accuracy significantly.</p>
+      </div>
+      <div class="media-card">
+        <label class="media-dropzone${m.video ? ' has-file' : ''}" id="video-drop">
+          ${m.video ? `
+            <span class="media-dropzone-icon is-done">${icon('circle-check', 24)}</span>
+            <span class="media-dropzone-title">${m.video}</span>
+            <span class="media-dropzone-hint">Video added. Upload another to replace it.</span>` : `
+            <span class="media-dropzone-icon">${icon('upload', 24)}</span>
+            <span class="media-dropzone-title">Choose a video or drag &amp; drop it here</span>
+            <span class="media-dropzone-hint">MP4, MOV, Up to 10 minutes</span>`}
+          <span class="btn btn-outline media-dropzone-btn">${m.video ? 'Replace' : 'Upload'}</span>
+          <input type="file" accept="video/mp4,video/quicktime,video/*" id="video-input" hidden />
         </label>
+        <div class="media-tips">
+          ${VIDEO_CHIPS.map(c => `<span class="media-tip">${icon('circle-check', 14)} ${c}</span>`).join('')}
+        </div>
       </div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top: var(--space-md)">
-        ${VIDEO_CHIPS.map(c => `<span class="chip">${icon('check', 12)} ${c}</span>`).join('')}
-      </div>
-    </div>
+    </section>
 
-    <div class="field">
-      <label>Add your floor plan</label>
-      <p class="p-sm text-muted">Buyers love floor plans: they show how the rooms connect and make your home easier to picture.</p>
-      <label class="checkbox-row">
-        <input type="checkbox" id="no-floorplan" ${m.noFloorPlan ? 'checked' : ''} /> I don't have a floor plan
-      </label>
-      <div class="reveal ${!m.noFloorPlan ? 'open' : ''}" id="floorplan-fields">
-        <div class="card" style="border-style:dashed; text-align:center;">
-          ${m.floorPlan ? `<p class="p-sm font-semibold">${icon('check', 16)} ${m.floorPlan}</p>` : `
-            <p>${icon('upload', 24)}</p>
-            <p class="p-sm">Choose your floor plans or drag &amp; drop them here</p>
-            <p class="p-mini text-muted">PDF, PNG, JPG or WEBP · up to 5 files, one per floor</p>
-          `}
-          <label class="btn btn-sm btn-outline" style="cursor:pointer; margin-top:8px;">
-            ${m.floorPlan ? 'Replace' : 'Upload'}
-            <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" id="floorplan-input" style="display:none" />
-          </label>
-        </div>
-        <button class="btn btn-outline" id="get-floorplan-service" style="margin-top:var(--space-s)">${icon('pencil-ruler', 14)} Get a free floor plan in 5 minutes</button>
-        <div class="reveal" id="floorplan-service-note"><div class="field-reaction helper">${icon('circle-help')} This connects to a separate paid service — not wired up in this prototype.</div></div>
-        <div class="field" style="margin-top: var(--space-md)">
-          <label>Interactive floor plan link</label>
-          <div style="display:flex; gap:8px;">
-            <input type="text" id="floorplan-link" placeholder="https://your-floor-plan-link" value="${m.floorPlanLink || ''}" style="flex:1" />
-            <button class="btn btn-sm btn-primary" id="floorplan-link-save" ${!m.floorPlanLink ? 'disabled' : ''}>Save link</button>
+    <section class="media-section">
+      <div class="media-section-head">
+        <p class="media-section-title">Add your floor plan</p>
+        <p class="media-section-text">Buyers love floor plans: they show how the rooms connect and make your home easier to picture.</p>
+      </div>
+      <div class="media-card">
+        <label class="checkbox-row">
+          <input type="checkbox" id="no-floorplan" ${m.noFloorPlan ? 'checked' : ''} /> I don't have a floor plan
+        </label>
+        <div class="reveal ${!m.noFloorPlan ? 'open' : ''}" id="floorplan-fields">
+          <div class="media-card-stack">
+            <label class="media-dropzone${m.floorPlan ? ' has-file' : ''}" id="floorplan-drop">
+              ${m.floorPlan ? `
+                <span class="media-dropzone-icon is-done">${icon('circle-check', 24)}</span>
+                <span class="media-dropzone-title">${m.floorPlan}</span>
+                <span class="media-dropzone-hint">Floor plan added. Upload another to replace it.</span>` : `
+                <span class="media-dropzone-icon">${icon('upload', 24)}</span>
+                <span class="media-dropzone-title">Choose your floor plans or drag &amp; drop them here</span>
+                <span class="media-dropzone-hint">PDF, PNG, JPG or WEBP, Up to 5 files, one per floor</span>`}
+              <span class="btn btn-outline media-dropzone-btn">${m.floorPlan ? 'Replace' : 'Upload'}</span>
+              <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" id="floorplan-input" hidden />
+            </label>
+            <div class="media-tips">
+              <button type="button" class="media-tip media-tip-action" id="get-floorplan-service">${icon('pencil-ruler', 14)} Get a free floor plan in 5 minutes</button>
+            </div>
+            <div class="reveal" id="floorplan-service-note"><div class="field-reaction helper">${icon('circle-help')} This connects to a separate paid service — not wired up in this prototype.</div></div>
+            <div class="field">
+              <label for="floorplan-link">Interactive floor plan link <span class="field-optional">(Optional)</span></label>
+              <div style="display:flex; gap:8px;">
+                <input type="text" id="floorplan-link" placeholder="https://your-floor-plan-link" value="${m.floorPlanLink || ''}" style="flex:1" />
+                <button class="btn btn-primary" id="floorplan-link-save" ${!m.floorPlanLink ? 'disabled' : ''}>Save link</button>
+              </div>
+              <p class="field-hint">Paste the link your scanning app gave you. Buyers open it from your listing.</p>
+            </div>
           </div>
-          <p class="p-mini text-muted">Paste the link your scanning app gave you. Buyers open it from your listing.</p>
         </div>
       </div>
-    </div>
+    </section>
   `;
 
   root.innerHTML = workingScreenMarkup({
@@ -211,8 +434,25 @@ function renderA32(root) {
   root.querySelector('#video-input').addEventListener('change', e => {
     if (e.target.files[0]) { m.video = e.target.files[0].name; saveListing(); renderApp(); }
   });
+  /* Drag & drop a video onto the zone */
+  const drop = root.querySelector('#video-drop');
+  ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('is-over'); }));
+  ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, () => drop.classList.remove('is-over')));
+  drop.addEventListener('drop', e => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('video/')) { m.video = file.name; saveListing(); renderApp(); }
+  });
   root.querySelector('#floorplan-input').addEventListener('change', e => {
     if (e.target.files[0]) { m.floorPlan = e.target.files[0].name; saveListing(); renderApp(); }
+  });
+  const fpDrop = root.querySelector('#floorplan-drop');
+  ['dragenter', 'dragover'].forEach(t => fpDrop.addEventListener(t, e => { e.preventDefault(); fpDrop.classList.add('is-over'); }));
+  ['dragleave', 'drop'].forEach(t => fpDrop.addEventListener(t, () => fpDrop.classList.remove('is-over')));
+  fpDrop.addEventListener('drop', e => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) { m.floorPlan = file.name; saveListing(); renderApp(); }
   });
   root.querySelector('#no-floorplan').addEventListener('change', e => {
     m.noFloorPlan = e.target.checked;

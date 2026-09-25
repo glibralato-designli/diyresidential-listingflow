@@ -110,5 +110,36 @@ function initNavOverlay() {
   document.getElementById('nav-overlay-scrim').addEventListener('click', closeNavOverlay);
   document.getElementById('nav-overlay-close').addEventListener('click', closeNavOverlay);
   document.getElementById('steps-trigger').addEventListener('click', openNavOverlay);
-  document.getElementById('save-exit').addEventListener('click', () => navigateTo('dashboard'));
+  document.getElementById('save-exit').addEventListener('click', openSaveExitModal);
+}
+
+/* Save & Exit asks first: progress is kept, but the home isn't listed
+   until every step is finished and the listing is signed. */
+function openSaveExitModal() {
+  if (document.getElementById('save-exit-scrim')) return;
+  const remaining = [1, 2, 3, 4].filter(n => !isActComplete(n)).length;
+  const el = document.createElement('div');
+  el.className = 'modal-scrim';
+  el.id = 'save-exit-scrim';
+  el.innerHTML = `
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="save-exit-title">
+      <button class="modal-close" id="save-exit-close" aria-label="Close">${icon('x')}</button>
+      <p class="h4" id="save-exit-title" style="margin-bottom:var(--space-md)">Leave your listing for now?</p>
+      <p class="p-reg text-muted">Your progress is saved and you can pick up right where you left off.</p>
+      <div class="note-callout" style="margin-top:var(--space-md)">Your listing isn't finished yet${remaining ? ` (${remaining} of 4 acts still to complete)` : ''}, so your property won't be listed until you complete every step and sign.</div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="save-exit-stay">Keep going</button>
+        <button class="btn btn-primary" id="save-exit-confirm">Save &amp; Exit</button>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+  refreshIcons();
+  const close = () => { el.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  el.addEventListener('click', e => { if (e.target === el) close(); });
+  el.querySelector('#save-exit-close').addEventListener('click', close);
+  el.querySelector('#save-exit-stay').addEventListener('click', close);
+  el.querySelector('#save-exit-confirm').addEventListener('click', () => { saveListing(); close(); navigateTo('dashboard'); });
+  el.querySelector('#save-exit-stay').focus();
 }

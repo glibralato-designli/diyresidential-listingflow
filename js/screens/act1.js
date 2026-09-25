@@ -207,6 +207,35 @@ function toggleQuestionCardMarkup({ name, label, options, value, optional, help,
     </div>`;
 }
 
+/* Personal interest options for sellers who are licensed agents */
+const PERSONAL_INTEREST_OPTIONS = [
+  'I am the owner of the property',
+  'I am related to the owner',
+  'I have an ownership interest in the entity that owns it',
+  'I am acting on behalf of my own company',
+  'Other'
+];
+
+/* What opens under the agent follow-up: the terminate-agreement notice for
+   sellers still under contract, or licence + personal-interest questions
+   for sellers who are agents themselves. */
+function agentDetailItems() {
+  const rep = listing.representedByAgent;
+  const fu = listing.agentFollowUp[rep];
+  const underAgreement = (rep === 'yes' && fu === 'Yes') || (rep === 'no' && fu === 'Yes, and I am still working with them');
+  const licensed = rep === 'is-agent' && fu === 'Yes';
+  return [
+    { callout: 'Terminate your current agreement', showIf: () => underAgreement,
+      text: "You'll need to end your current agreement with your agent before listing with DIY Residential. Ask your agent for a written release, or follow the termination terms in your agreement." },
+    { key: 'activeAgentAgreementNotice', type: 'checks', label: 'Terminate your current agreement', showIf: () => underAgreement,
+      options: ['I understand I need to end my current agreement before my listing goes live'] },
+    { key: 'licensedStates', type: 'checks', label: 'Check each state in which you hold an active real estate license', compact: true,
+      showIf: () => licensed, options: US_STATES },
+    { key: 'personalInterestDisclosure', type: 'checks', label: 'Personal Interest Disclosure: Please check all that applies to this transaction',
+      showIf: () => licensed, options: PERSONAL_INTEREST_OPTIONS }
+  ];
+}
+
 function agentQuestionMarkup() {
   const rep = listing.representedByAgent;
   const followUp = AGENT_FOLLOW_UPS[rep];
@@ -221,7 +250,8 @@ function agentQuestionMarkup() {
       <div class="field">
         <label>${followUp.question}</label>
         ${toggleGroupMarkup('agent-follow-up', followUp.options, listing.agentFollowUp[rep])}
-      </div>` : ''
+      </div>
+      ${hdBlockMarkup('agent', agentDetailItems(), listing.agentDetails)}` : ''
   });
 }
 
@@ -229,7 +259,8 @@ function agentQuestionMarkup() {
    the Utilities step. The three inputs only open on "Yes". */
 function schoolsQuestionMarkup() {
   const sc = listing.schools;
-  return toggleQuestionCardMarkup({
+  /* #268: the schools help sits above the gate and points at the TN school locator */
+  return `<div class="note-callout">Not sure which schools are zoned for this address? Look it up with the <a href="https://tn-can.org/school-locator/" target="_blank" rel="noopener" class="btn-link">Tennessee school locator</a>.</div>` + toggleQuestionCardMarkup({
     name: 'schools-nearby',
     label: 'Are there any schools nearby?',
     options: ['Yes', 'No'],
@@ -237,8 +268,7 @@ function schoolsQuestionMarkup() {
     revealHtml: sc.nearby === 'Yes' ? `
       <div class="field"><label for="f-elementary">Elementary School</label><input type="text" id="f-elementary" value="${sc.elementary}" /></div>
       <div class="field"><label for="f-middle">Middle School</label><input type="text" id="f-middle" value="${sc.middle}" /></div>
-      <div class="field"><label for="f-high">High School</label><input type="text" id="f-high" value="${sc.high}" /></div>
-      <div class="field-reaction helper">${icon('circle-help')}<span>Need help finding your zoned schools? <a href="#" class="btn-link" style="margin-left:4px">Click here.</a></span></div>` : ''
+      <div class="field"><label for="f-high">High School</label><input type="text" id="f-high" value="${sc.high}" /></div>` : ''
   });
 }
 
@@ -252,6 +282,22 @@ const ADDRESS_SUGGESTIONS = [
    the seller drags the map under it or zooms, then confirms. The map is a
    static street image, so the offset is kept for the session only. */
 let addressMapView = { x: 0, y: 0, zoom: 1 };
+
+/* Default state (Figma node 5663:54409): before an address is picked the
+   map shows on its own, with just the zoom controls: no pin, no card. */
+function addressMapIdleMarkup() {
+  const v = addressMapView;
+  return `
+    <div class="address-map is-idle" id="address-map" aria-label="Map">
+      <div class="address-map-canvas" style="transform: translate(${v.x}px, ${v.y}px) scale(${v.zoom})">
+        <img src="assets/images/address-map.webp" alt="" draggable="false" />
+      </div>
+      <div class="address-map-zoom">
+        <button type="button" class="address-map-zoom-btn" data-map-zoom="1" aria-label="Zoom in">${icon('plus', 20)}</button>
+        <button type="button" class="address-map-zoom-btn" data-map-zoom="-1" aria-label="Zoom out">${icon('minus', 20)}</button>
+      </div>
+    </div>`;
+}
 
 function addressMapMarkup(a) {
   const v = addressMapView;
@@ -390,10 +436,14 @@ function renderA11(root) {
       <input type="text" id="addr-input" placeholder="Start typing an address…" autocomplete="off" value="${a.line1 || ''}" />
       <div id="addr-suggestions"></div>
     </div>
+    <div class="field">
+      <label for="addr-line2">Street address line 2 <span class="field-optional">(Optional)</span></label>
+      <input type="text" id="addr-line2" placeholder="Apt, suite, unit, building" autocomplete="off" value="${hdEsc(a.line2)}" />
+    </div>
     ${a.resolved ? `
       ${addressMapMarkup(a)}
       ${a.locationConfirmed ? prefillBox() : ''}
-    ` : ''}
+    ` : addressMapIdleMarkup()}
     ${schoolsQuestionMarkup()}
     ${agentQuestionMarkup()}
     <div class="field-reaction helper">${icon('circle-help')} We'll ask for proof of ownership later, just before signing.</div>
@@ -438,6 +488,8 @@ function renderA11(root) {
   });
 
   wireAddressMap(root, a);
+  root.querySelector('#addr-line2').addEventListener('input', e => { a.line2 = e.target.value; saveListing(); });
+  wireHdScope(root, 'agent', listing.agentDetails);
 
   const yesBtn = root.querySelector('#prefill-yes');
   if (yesBtn) yesBtn.addEventListener('click', () => { a.prefill.confirmed.sqft = 'confirmed'; saveListing(); renderApp(); });
@@ -633,21 +685,38 @@ function renderA12(root) {
         <div class="field">
           <label>Association fee includes</label>
           ${checkboxGridMarkup('hoaFeeIncludes', HOA_FEE_INCLUDES, new Set(b.hoaDetails.feeIncludes))}
+          ${hdBlockMarkup('hoa-fee', [
+            { key: 'hoaFeeIncludesOther', type: 'text', label: 'Please type another option here:', showIf: h => (h.feeIncludes || []).includes('Other') }
+          ], b.hoaDetails)}
         </div>
 
         <div class="field-grid dense">
           <div class="field"><label>Current with HOA dues? <span class="field-optional">(Optional)</span></label><div class="segmented" id="hoa-current-segmented">${['Yes', 'No'].map(v => `<button data-val="${v}" class="${b.hoaDetails.currentWithDues === v ? 'active' : ''}">${v}</button>`).join('')}</div></div>
-          <div class="field"><label>Is there a special levy?</label><div class="segmented" id="hoa-levy-segmented">${['Yes', 'No'].map(v => `<button data-val="${v}" class="${b.hoaDetails.specialLevy === v ? 'active' : ''}">${v}</button>`).join('')}</div></div>
         </div>
+        ${hdBlockMarkup('hoa-dues', [
+          { key: 'hoaDuesExplain', type: 'textarea', label: 'Please explain', rows: 2, hint: 'How far behind are the dues, and is a payment plan in place?', showIf: h => h.currentWithDues === 'No' }
+        ], b.hoaDetails)}
 
         <div class="field-grid dense">
           <div class="field"><label>Renting permitted?</label><div class="segmented" id="hoa-renting-segmented">${['Yes', 'No'].map(v => `<button data-val="${v}" class="${b.hoaDetails.rentingPermitted === v ? 'active' : ''}">${v}</button>`).join('')}</div></div>
           <div class="field"><label>Trailers permitted?</label><div class="segmented" id="hoa-trailers-segmented">${['Yes', 'No'].map(v => `<button data-val="${v}" class="${b.hoaDetails.trailersPermitted === v ? 'active' : ''}">${v}</button>`).join('')}</div></div>
           <div class="field"><label>Pets permitted?</label><div class="segmented" id="hoa-pets-segmented">${['Yes', 'No', 'See Remarks'].map(v => `<button data-val="${v}" class="${b.hoaDetails.petsPermitted === v ? 'active' : ''}">${v}</button>`).join('')}</div></div>
         </div>
+        ${hdBlockMarkup('hoa-pets', [
+          { key: 'petRemarks', type: 'textarea', label: 'Pet Remarks', rows: 2, placeholder: 'e.g. up to 2 pets, under 40 lbs', showIf: h => h.petsPermitted === 'See Remarks' }
+        ], b.hoaDetails)}
       </div>
     </div>
     `)}
+
+    ${formSectionMarkup('Special assessments', hdBlockMarkup('assessment', [
+      { key: 'specialLevy', type: 'toggle', label: 'Is there a special levy or assessment on the property?', options: ['Yes', 'No'],
+        help: 'From an HOA or from the city or county, e.g. a road, sewer or improvement-district assessment.' },
+      { showIf: h => h.specialLevy === 'Yes', row: [
+        { key: 'hoaSpecialAssessmentAmount', type: 'number', label: 'Special-assessment amount, if any', placeholder: '0' },
+        { key: 'hoaSpecialLevyDuration', type: 'text', label: 'For how long?', placeholder: 'e.g. 12 months' }
+      ] }
+    ], b.hoaDetails))}
   `;
 
   root.innerHTML = workingScreenMarkup({
@@ -681,7 +750,7 @@ function renderA12(root) {
   root.querySelectorAll('#hoa-frequency-segmented button').forEach(btn => btn.addEventListener('click', () => { b.hoaDetails.frequency = btn.dataset.val; saveListing(); renderApp(); }));
 
   const hoaSegMap = {
-    'hoa-current-segmented': 'currentWithDues', 'hoa-levy-segmented': 'specialLevy',
+    'hoa-current-segmented': 'currentWithDues',
     'hoa-renting-segmented': 'rentingPermitted', 'hoa-trailers-segmented': 'trailersPermitted', 'hoa-pets-segmented': 'petsPermitted'
   };
   Object.entries(hoaSegMap).forEach(([id, key]) => {
@@ -698,9 +767,12 @@ function renderA12(root) {
         if (cb.checked) set.add(cb.value); else set.delete(cb.value);
         b.hoaDetails.feeIncludes = Array.from(set);
         saveListing();
+        if (cb.value === 'Other') renderApp();
       });
     });
   }
+
+  ['hoa-fee', 'hoa-dues', 'hoa-pets', 'assessment'].forEach(scope => wireHdScope(root, scope, b.hoaDetails));
 
   wireSteppers(root, null, (key, delta) => {
     b[key] = Math.max(0, (b[key] || 0) + delta);
@@ -841,7 +913,17 @@ function llcFieldsMarkup(llc) {
     <div class="field" style="margin-top:var(--space-md)">
       <label>Who is the primary contact for the LLC?</label>
       ${radioGroupMarkup('llc-primaryContact', ['I am the Primary Contact', 'Other'], llc.primaryContact)}
-    </div>`;
+    </div>
+    ${hdBlockMarkup('llc-contact', [
+      { title: 'Primary Contact for the LLC', showIf: l => l.primaryContact === 'Other', row: [
+        { key: 'primaryContactFirstName', type: 'text', label: 'First name' },
+        { key: 'primaryContactLastName', type: 'text', label: 'Last name' }
+      ] },
+      { showIf: l => l.primaryContact === 'Other', row: [
+        { key: 'primaryContactPhone', type: 'text', inputType: 'tel', label: 'Phone number' },
+        { key: 'primaryContactEmail', type: 'text', label: 'Email address' }
+      ] }
+    ], llc)}`;
 }
 
 function showingsContactMarkup(rd) {
@@ -874,9 +956,19 @@ function renderA13(root) {
     /* Co-owner has no separate "filer" — the filer IS Homeowner #1 */
     if (role !== 'co-owner') parts.push(contactInfoFieldsMarkup(listing.contact));
 
+    /* #256: roles acting for an owner say whether the home is co-owned
+       before they can add more homeowners */
+    const coOwnedGate = ['attorney', 'trustee', 'assisting'].includes(role);
+    if (coOwnedGate) {
+      if (rd.more.coOwned === 'No' && rd.homeowners.length > 1) rd.homeowners = rd.homeowners.slice(0, 1);
+      parts.push(`<div style="margin-top:var(--space-md)">${hdBlockMarkup('co-owned', [
+        { key: 'coOwned', type: 'toggle', label: 'Is the property co-owned with anyone else?', options: ['Yes', 'No'] }
+      ], rd.more)}</div>`);
+    }
+
     rd.homeowners.forEach((h, i) => parts.push(homeownerFieldsMarkup(h, i)));
 
-    if (role !== 'co-owner' && rd.homeowners.length) {
+    if (role !== 'co-owner' && rd.homeowners.length && (!coOwnedGate || rd.more.coOwned === 'Yes')) {
       parts.push(`
         <button class="btn btn-sm btn-outline" id="add-homeowner" style="margin-top:var(--space-md); border-style:dashed;">
           ${icon('plus', 14)} Add Homeowner
@@ -885,16 +977,53 @@ function renderA13(root) {
 
     parts.push(showingsContactMarkup(rd));
 
+    /* Mailing address: prints on the listing agreement (RF 101) */
+    parts.push(`
+      <div class="field" style="margin-top:var(--space-lg)">
+        <p class="p-mini font-bold text-muted" style="letter-spacing:1px; margin-bottom:var(--space-s)">MAILING ADDRESS</p>
+        ${hdBlockMarkup('mailing', [
+          { key: 'mailingAddressDifferent', type: 'toggle', label: "Is the Owner's mailing address different to the listing address?", options: ['Yes', 'No'] },
+          { showIf: m => m.mailingAddressDifferent === 'Yes', row: [
+            { key: 'mailingStreet', type: 'text', label: 'Street address' },
+            { key: 'mailingStreet2', type: 'text', label: 'Street address line 2', optional: true }
+          ] },
+          { showIf: m => m.mailingAddressDifferent === 'Yes', row: [
+            { key: 'mailingCity', type: 'text', label: 'City' },
+            { key: 'mailingState', type: 'select', label: 'State', placeholder: 'Select a state', options: US_STATES, noOther: true },
+            { key: 'mailingZip', type: 'text', label: 'ZIP code' }
+          ] }
+        ], rd.more)}
+      </div>`);
+
     parts.push(`
       <div class="field" style="margin-top:var(--space-lg)">
         <p class="p-mini font-bold text-muted" style="letter-spacing:1px; margin-bottom:var(--space-s)">OCCUPANCY</p>
         <label>Do the owners live on the property?</label>
         ${radioGroupMarkup('occupancy', ['Yes', 'No'], rd.occupancy)}
+        ${hdBlockMarkup('occupancy', [
+          { key: 'homeownerResided36Months', type: 'toggle', label: 'Has the homeowner(s) resided on the property for any length of time during the past thirty-six (36) months?', options: ['Yes', 'No'],
+            showIf: () => rd.occupancy === 'No' && ['attorney', 'trustee', 'llc', 'assisting'].includes(listing.role) },
+          { key: 'occupancyStatus', type: 'toggle', label: 'Occupied or Vacant?', options: ['Occupied', 'Vacant'], showIf: () => rd.occupancy === 'No' },
+          { key: 'tenantPermission', type: 'toggle', label: 'Permission to contact the tenant for scheduling?', options: ['Yes', 'No'], showIf: m => rd.occupancy === 'No' && m.occupancyStatus === 'Occupied' },
+          { key: 'tenantBeAdvised', type: 'toggle', label: 'BE ADVISED: The Tenant is…', showIf: m => rd.occupancy === 'No' && m.occupancyStatus === 'Occupied',
+            options: ['Aware of the sale', 'Not yet aware', 'Lease ends after closing', 'Other'] },
+          { title: 'Tenant contact', showIf: m => rd.occupancy === 'No' && m.occupancyStatus === 'Occupied', row: [
+            { key: 'tenantFirstName', type: 'text', label: "Tenant's first name" },
+            { key: 'tenantLastName', type: 'text', label: "Tenant's last name" }
+          ] },
+          { showIf: m => rd.occupancy === 'No' && m.occupancyStatus === 'Occupied', row: [
+            { key: 'tenantPhone', type: 'text', inputType: 'tel', label: "Tenant's phone" },
+            { key: 'tenantEmail', type: 'text', label: "Tenant's email" }
+          ] }
+        ], rd.more)}
       </div>
       <div class="field" style="margin-top:var(--space-lg)">
         <p class="p-mini font-bold text-muted" style="letter-spacing:1px; margin-bottom:var(--space-s)">PROPERTY READINESS</p>
         <label>Do you feel the property is ready to be photographed?</label>
         ${radioGroupMarkup('propertyReadiness', READINESS_OPTIONS, rd.propertyReadiness)}
+        ${hdBlockMarkup('readiness', [
+          { key: 'photoReadyOther', type: 'text', label: 'Please type another option here:', showIf: () => rd.propertyReadiness === 'Other' }
+        ], rd.more)}
       </div>`);
 
     return parts.join('');
@@ -987,6 +1116,9 @@ function renderA13(root) {
     });
   });
 
+  wireHdScope(root, 'llc-contact', rd.llc);
+  ['mailing', 'occupancy', 'readiness', 'co-owned'].forEach(scope => wireHdScope(root, scope, rd.more));
+
   wireFooter(root, { onBack: () => navigateTo('A1.2'), onContinue: () => navigateTo('A1.4') });
 }
 
@@ -994,11 +1126,53 @@ registerScreen('A1.3', { type: 'working', render: renderA13 });
 
 /* ---------------- A1.4 — Your home's story ---------------- */
 
+/* #263: improvements as a dated list (one row per update: what + year) */
+function improvementsMarkup(s) {
+  const rows = s.updates && s.updates.length ? s.updates : [{ text: '', year: '' }];
+  return `
+    <div class="field">
+      <label>Have you made any improvements you're proud of? <span class="field-optional">(Optional)</span></label>
+      <div class="improvement-list">
+        ${rows.map((r, i) => `
+          <div class="improvement-row" data-improvement="${i}">
+            <input type="text" data-imp-field="text" placeholder="e.g. New roof, kitchen remodel" value="${hdEsc(r.text)}" aria-label="Update ${i + 1}" />
+            <input type="text" data-imp-field="year" placeholder="Year" inputmode="numeric" maxlength="4" value="${hdEsc(r.year)}" aria-label="Year of update ${i + 1}" />
+            ${rows.length > 1 ? `<button type="button" class="photo-slot-remove" data-imp-remove="${i}" aria-label="Remove update ${i + 1}">${icon('trash-2', 18)}</button>` : ''}
+          </div>`).join('')}
+      </div>
+      <button type="button" class="btn btn-sm btn-outline" id="add-improvement" style="align-self:flex-start; border-style:dashed; margin-top:var(--space-xs)">${icon('plus', 14)} Add another update</button>
+      <p class="field-hint">These show on your public property page.</p>
+    </div>`;
+}
+
+function wireImprovements(root, s) {
+  if (!s.updates || !s.updates.length) s.updates = [{ text: '', year: '' }];
+  root.querySelectorAll('[data-improvement]').forEach(row => {
+    const i = Number(row.dataset.improvement);
+    row.querySelectorAll('[data-imp-field]').forEach(input => input.addEventListener('input', () => {
+      s.updates[i][input.dataset.impField] = input.value;
+      s.recentUpdates = s.updates.filter(u => u.text).map(u => u.year ? `${u.text} (${u.year})` : u.text).join('; ');
+      saveListing();
+    }));
+  });
+  root.querySelectorAll('[data-imp-remove]').forEach(btn => btn.addEventListener('click', () => {
+    s.updates.splice(Number(btn.dataset.impRemove), 1);
+    saveListing(); renderApp();
+  }));
+  const add = root.querySelector('#add-improvement');
+  if (add) add.addEventListener('click', () => {
+    s.updates.push({ text: '', year: '' });
+    saveListing(); renderApp();
+    const inputs = document.querySelectorAll('.improvement-row [data-imp-field="text"]');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  });
+}
+
 function renderA14(root) {
   const s = listing.story;
   const body = `
     <div class="field">
-      <label class="story-question">If you had 30 seconds with a buyer standing in your driveway, what would you want them to know about this home?</label>
+      <label for="f-driveway">If you had 30 seconds with a buyer standing in your driveway, what would you want them to know about this home?</label>
       <textarea id="f-driveway" rows="4">${s.driveway}</textarea>
     </div>
     <div class="reveal ${s.driveway ? 'open' : ''}">
@@ -1011,6 +1185,14 @@ function renderA14(root) {
         <textarea id="f-whyBought" rows="2">${s.whyBought}</textarea>
       </div>
     </div>
+    ${hdBlockMarkup('story', [
+      { key: 'whySelling', type: 'checks', label: 'Why are you selling?', optional: true,
+        hint: 'Private: this helps us tailor your listing and is never shown to buyers.',
+        options: ['Relocating for work', 'Upsizing', 'Downsizing', 'Moving closer to family', 'Change in finances', 'Investment property', 'Life change', 'Other'] },
+      { html: () => improvementsMarkup(s) },
+      { key: 'publicDescription', type: 'textarea', label: 'Public listing description', rows: 6, maxLength: 1500,
+        hint: "This is the description buyers read on your listing. The answers above help us understand the home; this one gets published, so write it for buyers." }
+    ], s)}
   `;
 
   root.innerHTML = workingScreenMarkup({
@@ -1029,6 +1211,8 @@ function renderA14(root) {
   });
   root.querySelector('#f-willMiss').addEventListener('input', e => { s.willMiss = e.target.value; saveListing(); });
   root.querySelector('#f-whyBought').addEventListener('input', e => { s.whyBought = e.target.value; saveListing(); });
+  wireHdScope(root, 'story', s);
+  wireImprovements(root, s);
 
   wireFooter(root, { onBack: () => navigateTo('A1.3'), onContinue: () => navigateTo('A1.5'), onSkip: () => navigateTo('A1.5') });
 }

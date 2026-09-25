@@ -12,6 +12,10 @@ const UTILITY_COMPANIES = [
   { key: 'trash', label: 'Trash' }
 ];
 
+const uHas = (f, key, vals) => Array.isArray(f[key]) && vals.some(v => f[key].includes(v));
+const uOilTank = f => ['Yes, there is one now', 'Yes, but it was removed'].includes(f.oilTank);
+const uSeptic = f => uHas(f, 'sewerSeptic', ['Septic In-Ground', 'Septic Above Ground']);
+
 const UTILITIES_TABS = [
   {
     id: 'costs', label: 'Utility costs',
@@ -26,11 +30,34 @@ const UTILITIES_TABS = [
     items: [
       { heading: 'Heating' },
       { key: 'hvacSystems', type: 'stepper', label: 'Number of HVAC systems', min: 0 },
+      { type: 'repeat', countKey: 'hvacSystems', max: 5, baseKey: 'hvacAge', labelFor: i => `Age of system ${i}`, placeholder: 'Years' },
       { key: 'heatType', type: 'checks', label: 'Type of heat', notSure: true,
         options: ['Base Board', 'Energy Star Unit(s)', 'Forced Air', 'Geothermal', 'Gravity Hot Air', 'Heat Pump Air', 'Heat Recovery System', 'Hot Water', 'Hydro Air', 'Passive Solar', 'Radiant', 'Radiator', 'Solar Thermal', 'Steam', 'None', 'See Remarks'] },
       { heading: 'Fuel' },
       { key: 'fuelType', type: 'checks', label: 'Type of fuel', notSure: true,
-        options: ['Coal', 'Electric', 'Kerosene', 'Natural Gas', 'Oil Above Ground', 'Oil Below Ground', 'Propane', 'Solar', 'Wood', 'Other'] }
+        options: ['Coal', 'Electric', 'Kerosene', 'Natural Gas', 'Oil Above Ground', 'Oil Below Ground', 'Propane', 'Solar', 'Wood', 'Other'] },
+      { heading: 'Oil tank' },
+      { key: 'oilTank', type: 'toggle', label: 'Is there currently, or has there ever been, an oil tank at the property?', notSure: true,
+        options: ['Yes, there is one now', 'Yes, but it was removed', 'No'] },
+      { callout: 'About underground oil storage tanks', showIf: uOilTank,
+        text: 'Buried oil tanks can leak over time, so buyers, lenders and insurers usually ask about them. If a tank was removed, the certificate of removal is the document they will want to see.' },
+      { key: 'oilTankPosition', type: 'toggle', label: 'Is the oil tank underground or above ground?', options: ['Underground', 'Above ground'], notSure: true, showIf: f => f.oilTank === 'Yes, there is one now' },
+      { row: [
+        { key: 'oilCompany', type: 'text', label: 'What company provides your oil?' },
+        { key: 'oilTankLocation', type: 'text', label: 'What is the location of the oil tank?', placeholder: 'e.g. basement, side yard' }
+      ], showIf: f => f.oilTank === 'Yes, there is one now' },
+      { row: [
+        { key: 'oilTankSize', type: 'number', label: 'What is the size of the oil tank (in gallons)?', placeholder: '0' },
+        { key: 'oilTankAge', type: 'number', label: 'What is the age of the oil tank?', placeholder: 'Years' },
+        { key: 'oilGallonsYearly', type: 'number', label: 'Average gallons of oil used yearly', placeholder: '0' }
+      ], showIf: f => f.oilTank === 'Yes, there is one now' },
+      { key: 'oilRemovalCertificate', type: 'toggle', label: 'Do you have a copy of the certificate of removal for the oil tank?', options: ['Yes', 'No'], showIf: f => f.oilTank === 'Yes, but it was removed' },
+      { heading: 'Gas tank', showIf: f => uHas(f, 'fuelType', ['Propane']) },
+      { row: [
+        { key: 'gasTankSize', type: 'text', label: 'What is the size of the gas tank?', placeholder: 'e.g. 500 gallons' },
+        { key: 'gasGallonsYearly', type: 'text', label: 'What is the average number of gas gallons/BTUs/therms used yearly?', placeholder: 'e.g. 600 gallons' }
+      ], showIf: f => uHas(f, 'fuelType', ['Propane']) },
+      { html: () => `<p class="field-hint">Your gas provider comes from the Gas row on Utility costs.</p>`, showIf: f => uHas(f, 'fuelType', ['Propane']) }
     ]
   },
   {
@@ -42,7 +69,8 @@ const UTILITIES_TABS = [
       { heading: 'Hot water' },
       { key: 'hotWater', type: 'checks', label: 'Hot water', notSure: true,
         options: ['Electric Stand Alone', 'Fuel Oil Stand Alone', 'Gas Stand Alone', 'Geothermal', 'Indirect Tank', 'On-Demand', 'Solar Thermal', 'Tank Less Coil', 'None'] },
-      { key: 'hotWaterTanks', type: 'stepper', label: 'Number of hot water tank(s)', optional: true, min: 0 }
+      { key: 'hotWaterTanks', type: 'stepper', label: 'Number of hot water tank(s)', optional: true, min: 0 },
+      { type: 'repeat', countKey: 'hotWaterTanks', max: 5, baseKey: 'hotWaterTankAge', labelFor: i => `Age of tank ${i}`, placeholder: 'Years' }
     ]
   },
   {
@@ -52,11 +80,23 @@ const UTILITIES_TABS = [
       { key: 'waterSource', type: 'checks', label: 'Water', notSure: true,
         options: ['Community', 'Drilled Well', 'Dug Well', 'City/Municipal', 'Private', 'Seasonal', 'Shared', 'Spring', 'None', 'Other'] },
       { heading: 'Garbage' },
-      { key: 'garbage', type: 'checks', label: 'Garbage', notSure: true,
+      { key: 'garbage', type: 'checks', label: 'Garbage', notSure: true, otherKey: 'garbageServiceOther',
         options: ['Private', 'Public', 'Other/See Remarks'] },
       { heading: 'Sewer / septic' },
       { key: 'sewerSeptic', type: 'checks', label: 'Sewer/Septic', notSure: true,
-        options: ['Public Sewer', 'Step System', 'Septic In-Ground', 'Cesspool', 'Septic Above Ground', 'Other', 'None'] }
+        options: ['Public Sewer', 'Step System', 'Septic In-Ground', 'Cesspool', 'Septic Above Ground', 'Other', 'None'] },
+      { heading: 'Septic tank', showIf: uSeptic },
+      { row: [
+        { key: 'septicAge', type: 'number', label: 'What is the age of the septic tank?', placeholder: 'Years' },
+        { key: 'septicSize', type: 'number', label: 'What is the size of the septic tank (in gallons)?', placeholder: '0' },
+        { key: 'septicLocation', type: 'text', label: 'Where is the septic tank located?', placeholder: 'e.g. back yard' }
+      ], showIf: uSeptic },
+      { row: [
+        { key: 'septicLastCleaned', type: 'text', label: 'When was the septic tank last cleaned?', placeholder: 'MM/YYYY' },
+        { key: 'septicServicer', type: 'text', label: 'What company services your septic tank?' }
+      ], showIf: uSeptic },
+      { key: 'septicFieldSurvey', type: 'toggle', label: 'Do you have a septic field survey?', options: ['Yes', 'No'], notSure: true, showIf: uSeptic },
+      { key: 'septicOther', type: 'textarea', label: 'Other/See Remarks', optional: true, rows: 2, showIf: uSeptic }
     ]
   }
 ];

@@ -25,6 +25,7 @@ function defaultListing() {
     role: null,
     representedByAgent: null,
     agentFollowUp: {},
+    agentDetails: {},
     schools: { nearby: null, elementary: '', middle: '', high: '' },
     contact: { firstName: '', lastName: '', phone: '', email: '', confirmEmail: '', prefMethod: null },
     roleDetails: {
@@ -33,9 +34,10 @@ function defaultListing() {
       homeowners: [],
       showingsContact: null,
       occupancy: null,
-      propertyReadiness: null
+      propertyReadiness: null,
+      more: {}
     },
-    story: { driveway: '', willMiss: '', whyBought: '' },
+    story: { driveway: '', willMiss: '', whyBought: '', recentUpdates: '', publicDescription: '' },
     features: {},
     utilities: {},
     contracts: {},
@@ -228,7 +230,7 @@ function photoSlotDefinitions() {
 
   const bathSlots = [];
   for (let i = 1; i <= baths; i++) {
-    bathSlots.push({ id: `bathroom-${i}`, label: `Bathroom ${i}`, required: i === 1 });
+    bathSlots.push({ id: `bathroom-${i}`, label: i === 1 ? 'Primary bathroom' : `Bathroom ${i}`, required: i === 1 });
   }
 
   return [...base, ...bedSlots, ...bathSlots];

@@ -39,8 +39,11 @@ const VALUATION_TIERS = [
 ];
 
 /* Listing Card with photo + the 360 action (Figma node 4125:1409) */
-function comparableCardMarkup(c) {
-  return listingCardMarkup({
+function comparableCardMarkup(c, i) {
+  const selected = (listing.selectedComparables || []).includes(i);
+  return `<div class="comparable-item${selected ? ' selected' : ''}" data-comp-select="${i}" role="button" tabindex="0" aria-pressed="${selected}" aria-label="Comparable ${i + 1}, ${c.price}">
+    ${selected ? `<span class="comparable-check">${icon('check', 14)}</span>` : ''}
+    ${listingCardMarkup({
     photo: c.photo,
     placeholder: icon('house', 28),
     title: c.price,
@@ -49,7 +52,8 @@ function comparableCardMarkup(c) {
     baths: c.baths,
     sqft: c.sqft,
     actionsHtml: `<span class="listing-card-action" aria-hidden="true">${icon('rotate-3d', 20)}</span>`
-  });
+  })}
+  </div>`;
 }
 
 /* Commission a traditional listing agent would take, less our tech charge,
@@ -58,6 +62,10 @@ function savingsRange(price) {
   const round = n => Math.round(n / 1000) * 1000;
   return [round(price * 0.0575 - 1395), round(price * 0.0625 - 1395)];
 }
+
+/* Nothing is selected until the seller picks a tier; typing a different
+   price afterwards clears the selection. */
+const tierSelected = v => listing.priceTier === v && Number(listing.price) === v;
 
 function renderA41(root) {
   if (!listing.price) listing.price = 960000;
@@ -72,11 +80,14 @@ function renderA41(root) {
     <div class="card" style="display:flex; flex-direction:column; gap:var(--space-md);">
       <span class="badge badge-secondary">DIY suggested valuation</span>
       <div class="valuation-tiers">
-        ${VALUATION_TIERS.map(t => `
-          <div class="valuation-tier${t.suggested ? ' suggested' : ''}">
-            <span class="badge ${t.suggested ? 'badge-primary' : 'badge-neutral'}">${t.label}</span>
-            <p class="tier-value">$${t.value.toLocaleString()}</p>
-          </div>`).join('')}
+        ${VALUATION_TIERS.map(t => {
+          const on = tierSelected(t.value);
+          return `
+          <button type="button" class="valuation-tier${on ? ' selected' : ''}" data-tier="${t.value}" aria-pressed="${on}">
+            <span class="badge ${on ? 'badge-primary' : 'badge-neutral'}">${t.label}</span>
+            <span class="tier-value">$${t.value.toLocaleString()}</span>
+          </button>`;
+        }).join('')}
       </div>
       <p class="p-sm text-muted">Based on 2 comparable sales within 2 miles, closed in the last 6 months, refined with your home photos.</p>
       <div class="savings-alert-banner">
@@ -87,9 +98,10 @@ function renderA41(root) {
 
     <div class="field">
       <label>Comparable Properties</label>
+      <p class="field-hint" style="margin-top:-4px">Drag sideways to see more. Click a property to select it as a comparable.</p>
       <div class="comparable-carousel">
         <div class="comparable-row" id="comparable-row" tabindex="0" aria-label="Comparable properties">
-          ${COMPARABLES.map(comparableCardMarkup).join('')}
+          ${COMPARABLES.map((c, i) => comparableCardMarkup(c, i)).join('')}
         </div>
         ${iconButtonMarkup('arrow-left', 'Previous comparables', 'data-comp-go="-1"')}
         ${iconButtonMarkup('arrow-right', 'More comparables', 'data-comp-go="1"')}
@@ -145,7 +157,7 @@ function renderA41(root) {
   const arrows = root.querySelectorAll('[data-comp-go]');
   const dots = root.querySelector('#comparable-dots');
   const step = () => {
-    const card = row.querySelector('.listing-card');
+    const card = row.querySelector('.comparable-item');
     return card ? card.offsetWidth + 16 : row.clientWidth;
   };
   const pageCount = () => Math.max(1, Math.round((row.scrollWidth - row.clientWidth) / step()) + 1);
@@ -174,16 +186,86 @@ function renderA41(root) {
       row.scrollBy({ left: (e.key === 'ArrowRight' ? 1 : -1) * step(), behavior: 'smooth' });
     }
   });
+  /* Mouse drag scrolls the row sideways (touch scrolls natively); a click
+     without a drag selects or unselects that comparable. */
+  let drag = null;
+  row.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    drag = { x: e.clientX, left: row.scrollLeft, moved: false };
+  });
+  row.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (!drag.moved && Math.abs(dx) > 5) { drag.moved = true; row.classList.add('is-dragging'); row.setPointerCapture(e.pointerId); }
+    if (drag.moved) row.scrollLeft = drag.left - dx;
+  });
+  const endDrag = () => {
+    if (!drag) return;
+    const moved = drag.moved;
+    drag = null;
+    if (moved) {
+      row.classList.remove('is-dragging');
+      row.dataset.justDragged = '1';
+      setTimeout(() => { delete row.dataset.justDragged; }, 0);
+      const i = Math.round(row.scrollLeft / step());
+      row.scrollTo({ left: i * step(), behavior: 'smooth' });
+    }
+  };
+  row.addEventListener('pointerup', endDrag);
+  row.addEventListener('pointercancel', endDrag);
+  row.addEventListener('dragstart', e => e.preventDefault());
+
+  const toggleComp = i => {
+    const set = new Set(listing.selectedComparables || []);
+    if (set.has(i)) set.delete(i); else set.add(i);
+    listing.selectedComparables = Array.from(set).sort();
+    saveListing();
+    const item = row.querySelector(`[data-comp-select="${i}"]`);
+    const on = set.has(i);
+    item.classList.toggle('selected', on);
+    item.setAttribute('aria-pressed', on);
+    const check = item.querySelector('.comparable-check');
+    if (on && !check) { item.insertAdjacentHTML('afterbegin', `<span class="comparable-check">${icon('check', 14)}</span>`); refreshIcons(); }
+    if (!on && check) check.remove();
+  };
+  row.querySelectorAll('[data-comp-select]').forEach(item => {
+    item.addEventListener('click', () => { if (!row.dataset.justDragged) toggleComp(Number(item.dataset.compSelect)); });
+    item.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleComp(Number(item.dataset.compSelect)); } });
+  });
+
   row.addEventListener('scroll', syncCarousel, { passive: true });
   new ResizeObserver(syncCarousel).observe(row);
   requestAnimationFrame(syncCarousel);
 
-  root.querySelector('#price-input').addEventListener('input', e => {
-    listing.price = Number(e.target.value) || 0;
-    saveListing();
+  /* Picking a tier sets the target price below; typing a price selects the
+     tier it matches (or none, for a custom price). */
+  const priceInput = root.querySelector('#price-input');
+  const syncPrice = () => {
     root.querySelector('#net-estimate').textContent = `$${netEstimate().toLocaleString()}`;
     root.querySelector('#savings-range').innerHTML = savingsText();
+    root.querySelectorAll('[data-tier]').forEach(btn => {
+      const on = tierSelected(Number(btn.dataset.tier));
+      btn.classList.toggle('selected', on);
+      btn.setAttribute('aria-pressed', on);
+      const badge = btn.querySelector('.badge');
+      badge.classList.toggle('badge-primary', on);
+      badge.classList.toggle('badge-neutral', !on);
+    });
     refreshLivingCardRail();
+  };
+  root.querySelectorAll('[data-tier]').forEach(btn => btn.addEventListener('click', () => {
+    listing.price = Number(btn.dataset.tier);
+    listing.priceTier = listing.price;
+    priceInput.value = listing.price;
+    saveListing();
+    syncPrice();
+    priceInput.classList.add('just-set');
+    setTimeout(() => priceInput.classList.remove('just-set'), 600);
+  }));
+  priceInput.addEventListener('input', e => {
+    listing.price = Number(e.target.value) || 0;
+    saveListing();
+    syncPrice();
   });
 
   wireFooter(root, { onBack: () => navigateTo('A4.0'), onContinue: () => navigateTo('A4.2') });
@@ -198,41 +280,37 @@ let docusignModalOpen = false;
 function renderA42(root) {
   const s = listing.signing;
   const body = `
-    <div class="field">
-      <label>Proof of ownership</label>
-      <div class="field-reaction helper">${icon('circle-help')} Our brokerage team reviews this within 2–4 business hours.</div>
-      <div class="card" style="border-style:dashed; text-align:center;">
-        ${s.ownershipFile ? `<p class="p-sm font-semibold">${icon('check', 16)} ${s.ownershipFile}</p>` : `
-          <p>${icon('upload', 24)}</p>
-          <p class="p-sm">Upload a deed, tax bill, or title document</p>
-          <p class="p-mini text-muted">PDF, JPG or PNG, up to 10MB</p>
-        `}
-        <label class="btn btn-sm btn-outline" style="cursor:pointer; margin-top:8px;">
-          ${s.ownershipFile ? 'Replace' : 'Upload'}
-          <input type="file" accept=".pdf,.jpg,.jpeg,.png" id="ownership-input" style="display:none" />
-        </label>
+    <section class="media-section">
+      <div class="media-section-head">
+        <p class="media-section-title">Proof of ownership</p>
+        <p class="media-section-text">Upload a deed, tax bill, or title document. Our brokerage team reviews it within 2–4 business hours.</p>
       </div>
-    </div>
+      <div class="media-card">
+        ${dropzoneMarkup({ id: 'ownership-drop', accept: '.pdf,.jpg,.jpeg,.png', inputAttrs: 'id="ownership-input"', fileName: s.ownershipFile,
+          title: 'Choose a document or drag &amp; drop it here', hint: 'PDF, JPG or PNG, Up to 10MB', doneHint: 'Document added. Upload another to replace it.' })}
+      </div>
+    </section>
 
     <div class="field-reaction helper">
-      ${icon('circle-help')} This step has never been unlocked on a live test listing — treat the signing hand-off below as a best-effort reconstruction.
+      ${icon('circle-help')} This step has never been unlocked on a live test listing — treat the DocuSign hand-off after "Continue to signing" as a best-effort reconstruction.
     </div>
-
-    <button class="btn btn-primary" id="open-docusign" style="align-self:flex-start">Continue to signing</button>
   `;
 
   root.innerHTML = workingScreenMarkup({
     eyebrow: 'Step 11 of 11 - Ownership & signing',
     title: 'Ownership evidence & signing',
     bodyHtml: body
-  }) + footerBarMarkup('Back', 'Publish listing', false) + `
+  }) + footerBarMarkup('Back', 'Continue to signing', false) + `
     <div class="modal-scrim" id="docusign-scrim" ${docusignModalOpen ? '' : 'hidden'}>
       <div class="modal-card">
         <button class="modal-close" id="docusign-close">${icon('x')}</button>
         <p class="h4" style="margin-bottom:var(--space-md)">You're about to leave DIY Residential</p>
         <p class="p-reg text-muted" style="margin-bottom:var(--space-md)">Signing happens through DocuSign, a separate secure site. Come back here afterward — your progress is saved.</p>
-        <div class="field-reaction helper">${icon('circle-help')} Return state: you'll land back on this screen. Processing state: a banner shows while DocuSign confirms. Stalled state: we'll show a "check your email" note if it takes longer than expected.</div>
-        <button class="btn btn-primary" id="docusign-confirm" style="margin-top:var(--space-lg)">Open DocuSign</button>
+        <div class="note-callout">Return state: you'll land back on this screen. Processing state: a banner shows while DocuSign confirms. Stalled state: we'll show a "check your email" note if it takes longer than expected.</div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" id="docusign-later">Not right now</button>
+          <button class="btn btn-primary" id="docusign-confirm">Open DocuSign</button>
+        </div>
       </div>
     </div>
   `;
@@ -240,15 +318,12 @@ function renderA42(root) {
   root.querySelector('#ownership-input').addEventListener('change', e => {
     if (e.target.files[0]) { s.ownershipFile = e.target.files[0].name; saveListing(); renderApp(); }
   });
+  wireDropzone(root.querySelector('#ownership-drop'), file => { s.ownershipFile = file.name; saveListing(); renderApp(); });
 
-  root.querySelector('#open-docusign').addEventListener('click', () => {
-    docusignModalOpen = true;
-    root.querySelector('#docusign-scrim').hidden = false;
-  });
-  root.querySelector('#docusign-close').addEventListener('click', () => {
+  root.querySelectorAll('#docusign-close, #docusign-later').forEach(btn => btn.addEventListener('click', () => {
     docusignModalOpen = false;
     root.querySelector('#docusign-scrim').hidden = true;
-  });
+  }));
   root.querySelector('#docusign-confirm').addEventListener('click', () => {
     s.signed = true;
     docusignModalOpen = false;
