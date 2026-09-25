@@ -33,10 +33,13 @@ function renderE1(root) {
   root.innerHTML = `
     ${dashboardMarkup()}
     <div class="modal-scrim">
-      <div class="modal-card">
-        <button class="modal-close" id="e1-close" aria-label="Close">${icon('x')}</button>
-        <p class="h4" style="margin-bottom: var(--space-xs)">What kind of property is this?</p>
-        <p class="p-sm text-muted" style="margin-bottom: var(--space-xl)">We'll tailor the next few questions to your property type.</p>
+      <div class="modal-card picker-modal" role="dialog" aria-modal="true" aria-labelledby="e1-title">
+        <div class="picker-modal-head">
+          <button class="picker-modal-close" id="e1-close" aria-label="Close">${icon('x', 16)}</button>
+        </div>
+        <div class="picker-modal-body">
+        <p class="picker-modal-title" id="e1-title">What kind of property is this?</p>
+        <p class="picker-modal-sub">We'll tailor the next few questions to your property type.</p>
         <div class="choice-grid" role="radiogroup" aria-label="Property type">
           ${PROPERTY_TYPES.map(t => `
             <button class="choice-card" role="radio" aria-checked="false" data-type="${t.id}">
@@ -50,7 +53,8 @@ function renderE1(root) {
             <input type="text" id="e1-other-input" value="${listing.propertyTypeOther || ''}" placeholder="e.g. mobile home, mixed-use building" />
           </div>
         </div>
-        <div class="modal-actions">
+        </div>
+        <div class="picker-modal-foot">
           <button class="btn btn-primary" id="e1-continue" disabled>Continue</button>
         </div>
       </div>
